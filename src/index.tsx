@@ -4,10 +4,12 @@ import {
   Dimensions,
   FlatList,
   FlatListProps,
+  Platform,
   ScrollViewProps,
   SectionList,
   SectionListProps,
   StyleSheet,
+  View,
 } from 'react-native';
 import {
   NativeViewGestureHandler,
@@ -16,6 +18,7 @@ import {
   PanGestureHandlerStateChangeEvent,
   ScrollView,
   State,
+  TapGestureHandler,
 } from 'react-native-gesture-handler';
 import { Assign } from 'utility-types';
 
@@ -87,6 +90,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   private drawerHandleRef = React.createRef<PanGestureHandler>();
   private drawerContentRef = React.createRef<PanGestureHandler>();
   private scrollComponentRef = React.createRef<NativeViewGestureHandler>();
+
+  private iOSMasterDrawer = React.createRef<TapGestureHandler>();
 
   /**
    * Reference to FlatList, ScrollView or SectionList in order to execute its imperative methods.
@@ -240,6 +245,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   onHeaderHandlerStateChange: PanGestureHandlerProperties['onHandlerStateChange'] = ({
     nativeEvent,
   }) => {
+    if (nativeEvent.state === State.BEGAN && Platform.OS === 'ios') {
+      // @ts-ignore
+      this.contentComponentRef.current?._component?.setNativeProps({
+        decelerationRate: 0,
+        disableIntervalMomentum: true,
+      });
+    }
     if (nativeEvent.oldState === State.BEGAN) {
       this.isDragWithHandle = true;
       // If we pull down the drawer with the handle, we set this value to compensate the amount of scroll on the FlatList
@@ -294,6 +306,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     this.dragY.setValue(0);
     this.lastSnap =
       destSnapPoint - (didScrollUpAndPullDown ? this.lastStartScrollYValue : 0);
+    if (Platform.OS === 'ios') {
+      // @ts-ignore
+      this.iOSMasterDrawer?.current?.setNativeProps({
+        maxDeltaY: this.lastSnap - this.getNormalisedSnapPoints()[0],
+      });
+    }
   };
 
   onHandlerStateChange = (
@@ -340,7 +358,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       }).start(() => {
         // @ts-ignore
         this.contentComponentRef.current?._component?.setNativeProps({
-          decelerationRate: this.lastSnap === snapPoints[0] ? 0.985 : 0,
+          decelerationRate:
+            this.lastSnap === snapPoints[0]
+              ? Platform.OS === 'ios'
+                ? 0.998
+                : 0.985
+              : 0,
+          disableIntervalMomentum: false,
         });
         if (this.didScrollUpAndPullDown) {
           // Compensate values between startScroll (set it to 0) and restore the final amount from translateYOffset;
@@ -388,7 +412,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     } = this.props;
     const AnimatedScrollableComponent = this.scrollComponent;
 
-    return (
+    const drawerContentSimultaneousHandlers =
+      Platform.OS === 'ios'
+        ? [this.scrollComponentRef, this.iOSMasterDrawer]
+        : [this.scrollComponentRef];
+
+    const Content = (
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
@@ -400,6 +429,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         <PanGestureHandler
           ref={this.drawerHandleRef}
           shouldCancelWhenOutside={false}
+          simultaneousHandlers={
+            Platform.OS === 'ios' ? this.iOSMasterDrawer : undefined
+          }
           onGestureEvent={this.onGestureEvent}
           onHandlerStateChange={this.onHeaderHandlerStateChange}
         >
@@ -407,7 +439,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         </PanGestureHandler>
         <PanGestureHandler
           ref={this.drawerContentRef}
-          simultaneousHandlers={[this.scrollComponentRef]}
+          simultaneousHandlers={drawerContentSimultaneousHandlers}
           shouldCancelWhenOutside={false}
           onGestureEvent={this.onGestureEvent}
           onHandlerStateChange={this.onHandlerStateChange}
@@ -415,6 +447,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           <Animated.View style={styles.container}>
             <NativeViewGestureHandler
               ref={this.scrollComponentRef}
+              waitFor={Platform.OS === 'ios' ? this.iOSMasterDrawer : undefined}
               simultaneousHandlers={this.drawerContentRef}
             >
               <AnimatedScrollableComponent
@@ -422,7 +455,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                 // @ts-ignore
                 ref={this.contentComponentRef}
                 overScrollMode="never"
-                decelerationRate={initialSnapIndex === 0 ? 0.985 : 0}
+                decelerationRate={
+                  initialSnapIndex === 0
+                    ? Platform.OS === 'ios'
+                      ? 0.998
+                      : 0.985
+                    : 0
+                }
                 onScrollBeginDrag={this.onScrollBeginDrag}
                 onMomentumScrollEnd={this.handleMomentumScrollEnd}
                 scrollEventThrottle={1}
@@ -432,6 +471,22 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           </Animated.View>
         </PanGestureHandler>
       </Animated.View>
+    );
+
+    if (Platform.OS === 'android') {
+      return Content;
+    }
+
+    return (
+      <TapGestureHandler
+        maxDurationMs={100000}
+        ref={this.iOSMasterDrawer}
+        maxDeltaY={this.lastSnap - this.getNormalisedSnapPoints()[0]}
+      >
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+          {Content}
+        </View>
+      </TapGestureHandler>
     );
   }
 }
