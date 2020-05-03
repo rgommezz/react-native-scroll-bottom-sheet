@@ -82,6 +82,7 @@
       "prettier/prettier": [
         "error",
         {
+          "arrowParens": "avoid",
           "singleQuote": true,
           "tabWidth": 2,
           "trailingComma": "es5",
@@ -95,6 +96,7 @@
     "lib/"
   ],
   "prettier": {
+    "arrowParens": "avoid",
     "singleQuote": true,
     "tabWidth": 2,
     "trailingComma": "es5",

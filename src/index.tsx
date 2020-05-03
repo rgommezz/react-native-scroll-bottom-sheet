@@ -209,7 +209,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   }
 
   getNormalisedSnapPoints = () => {
-    return this.props.snapPoints.map((p) => {
+    return this.props.snapPoints.map(p => {
       if (typeof p === 'string') {
         return this.convertPercentageToDp(p);
       } else if (typeof p === 'number') {
@@ -368,7 +368,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           this.isDragWithHandle = false;
         }
 
-        const snapIndex = snapPoints.findIndex((p) => p === destSnapPoint);
+        const snapIndex = snapPoints.findIndex(p => p === destSnapPoint);
         if (typeof this.props.onSettle === 'function') {
           this.props.onSettle(snapIndex);
         }
