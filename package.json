@@ -1,5 +1,5 @@
 {
-  "name": "react-native-scroll-bottomsheet",
+  "name": "react-native-scroll-bottom-sheet",
   "version": "0.0.1",
   "description": "Cross platform scrollable bottom sheet with virtualisation support, running at 60 FPS and fully implemented in JS land",
   "main": "lib/commonjs/index.js",
@@ -23,13 +23,13 @@
     "ios",
     "android"
   ],
-  "repository": "https://github.com/rgommezz/react-native-scroll-bottomsheet",
-  "author": "rgommezz <rauliyohmc@gmail.com> (https://github.com/rgommezz)",
+  "repository": "https://github.com/rgommezz/react-native-scroll-bottom-sheet",
+  "author": "Raul Gomez Acuña <raulgdeveloper@gmail.com> (https://github.com/rgommezz)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rgommezz/react-native-scroll-bottomsheet/issues"
+    "url": "https://github.com/rgommezz/react-native-scroll-bottom-sheet/issues"
   },
-  "homepage": "https://github.com/rgommezz/react-native-scroll-bottomsheet#readme",
+  "homepage": "https://github.com/rgommezz/react-native-scroll-bottom-sheet#readme",
   "devDependencies": {
     "@commitlint/config-conventional": "^8.3.4",
     "@react-native-community/bob": "^0.10.1",
@@ -73,6 +73,7 @@
       "prettier"
     ],
     "rules": {
+      "@typescript-eslint/no-unused-vars": "off",
       "prettier/prettier": [
         "error",
         {
@@ -119,5 +120,9 @@
       "module",
       "typescript"
     ]
+  },
+  "dependencies": {
+    "react-native-gesture-handler": "^1.6.1",
+    "utility-types": "^3.10.0"
   }
 }

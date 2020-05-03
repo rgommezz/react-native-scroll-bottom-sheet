@@ -1,17 +1,17 @@
-# react-native-scroll-bottomsheet
+# Scroll Bottom Sheet
 
 Cross platform scrollable bottom sheet with virtualisation support, running at 60 FPS and fully implemented in JS land
 
 ## Installation
 
 ```sh
-npm i -S react-native-scroll-bottomsheet
+npm i -S react-native-scroll-bottom-sheet
 ```
 
 ## Usage
 
 ```js
-import ScrollBottomsheet from "react-native-scroll-bottomsheet";
+import ScrollBottomSheet from "react-native-scroll-bottom-sheet";
 ```
 
 ## License
