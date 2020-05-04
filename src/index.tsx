@@ -451,6 +451,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               simultaneousHandlers={this.drawerContentRef}
             >
               <AnimatedScrollableComponent
+                {...rest}
                 bounces={false}
                 // @ts-ignore
                 ref={this.contentComponentRef}
@@ -465,7 +466,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                 onScrollBeginDrag={this.onScrollBeginDrag}
                 onMomentumScrollEnd={this.handleMomentumScrollEnd}
                 scrollEventThrottle={1}
-                {...rest}
+                contentContainerStyle={[
+                  rest.contentContainerStyle,
+                  { paddingBottom: this.getNormalisedSnapPoints()[0] },
+                ]}
               />
             </NativeViewGestureHandler>
           </Animated.View>
