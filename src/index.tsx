@@ -245,13 +245,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   onHeaderHandlerStateChange: PanGestureHandlerProperties['onHandlerStateChange'] = ({
     nativeEvent,
   }) => {
-    if (nativeEvent.state === State.BEGAN && Platform.OS === 'ios') {
-      // @ts-ignore
-      this.contentComponentRef.current?._component?.setNativeProps({
-        decelerationRate: 0,
-        disableIntervalMomentum: true,
-      });
-    }
     if (nativeEvent.oldState === State.BEGAN) {
       this.isDragWithHandle = true;
       // If we pull down the drawer with the handle, we set this value to compensate the amount of scroll on the FlatList
@@ -289,9 +282,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     },
   }) => {
     // Updating the position of last scroll after the momentum ends.
-    if (!this.didScrollUpAndPullDown) {
+    if (!this.didScrollUpAndPullDown && !this.isDragWithHandle) {
       this.lastStartScrollY.setValue(y);
       this.lastStartScrollYValue = y;
+    }
+
+    if (this.isDragWithHandle) {
+      // We reset this only when we the scroll animation settles.
+      this.isDragWithHandle = false;
     }
   };
 
@@ -389,7 +387,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           // We have come back to the top snapping point and the list is not scrolled to the top
           this.lastEndScrollY.setValue(0);
           this.didSnapToDifferentThanTopWithHandle = false;
-          this.isDragWithHandle = false;
         }
 
         const snapIndex = snapPoints.findIndex(p => p === destSnapPoint);
