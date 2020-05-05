@@ -253,11 +253,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     this.onHandlerStateChange({ nativeEvent }, true);
   };
 
-  getSnapPoint = (
+  getSnapPointAndAnimationDuration = (
     velocityY: number,
     translationY: number,
+    originalTranslationY: number,
     didScrollUpAndPullDown: boolean = false
   ) => {
+    let animationDuration = 250;
     const snapPoints = this.getNormalisedSnapPoints();
     const extraOffset = didScrollUpAndPullDown ? this.lastStartScrollYValue : 0;
     const dragToss = 0.05;
@@ -273,7 +275,25 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       }
     }
 
-    return destSnapPoint;
+    const isNewSnapPointAtTheEdges =
+      destSnapPoint === snapPoints[0] || snapPoints[snapPoints.length - 1];
+    const shouldSnapToNewPoint = this.lastSnap !== destSnapPoint;
+    const didDragMoreThanSnappingDistance =
+      Math.abs(originalTranslationY) >= Math.abs(this.lastSnap - destSnapPoint);
+    const didScrollUpAndPullDownContinuously =
+      translationY >= this.lastStartScrollYValue &&
+      this.lastStartScrollYValue > 0;
+
+    if (
+      isNewSnapPointAtTheEdges &&
+      shouldSnapToNewPoint &&
+      didDragMoreThanSnappingDistance &&
+      !didScrollUpAndPullDownContinuously
+    ) {
+      animationDuration = 0;
+    }
+
+    return { destSnapPoint, duration: animationDuration };
   };
 
   handleMomentumScrollEnd: ScrollViewProps['onMomentumScrollEnd'] = ({
@@ -282,14 +302,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     },
   }) => {
     // Updating the position of last scroll after the momentum ends.
-    if (!this.didScrollUpAndPullDown && !this.isDragWithHandle) {
+    if (!this.didScrollUpAndPullDown) {
       this.lastStartScrollY.setValue(y);
       this.lastStartScrollYValue = y;
-    }
-
-    if (this.isDragWithHandle) {
-      // We reset this only when we the scroll animation settles.
-      this.isDragWithHandle = false;
     }
   };
 
@@ -337,9 +352,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         this.didScrollUpAndPullDown = true;
       }
 
-      let destSnapPoint = this.getSnapPoint(
+      const { destSnapPoint, duration } = this.getSnapPointAndAnimationDuration(
         velocityY,
         translationY,
+        nativeEvent.translationY,
         this.didScrollUpAndPullDown
       );
 
@@ -351,7 +367,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
       Animated.timing(this.translateYOffset, {
         toValue: destSnapPoint,
-        duration: 250,
+        duration,
         useNativeDriver: true,
       }).start(() => {
         // @ts-ignore
@@ -387,6 +403,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           // We have come back to the top snapping point and the list is not scrolled to the top
           this.lastEndScrollY.setValue(0);
           this.didSnapToDifferentThanTopWithHandle = false;
+          this.isDragWithHandle = false;
         }
 
         const snapIndex = snapPoints.findIndex(p => p === destSnapPoint);
