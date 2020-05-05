@@ -370,14 +370,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         duration,
         useNativeDriver: true,
       }).start(() => {
+        const decelerationRate = Platform.select({
+          ios: 0.998,
+          android: this.lastSnap === snapPoints[0] ? 0.985 : 0,
+        });
         // @ts-ignore
         this.contentComponentRef.current?._component?.setNativeProps({
-          decelerationRate:
-            this.lastSnap === snapPoints[0]
-              ? Platform.OS === 'ios'
-                ? 0.998
-                : 0.985
-              : 0,
+          decelerationRate,
           disableIntervalMomentum: false,
         });
         if (this.didScrollUpAndPullDown) {
@@ -431,6 +430,11 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         ? [this.scrollComponentRef, this.iOSMasterDrawer]
         : [this.scrollComponentRef];
 
+    const initialDecelerationRate = Platform.select({
+      android: initialSnapIndex === 0 ? 0.985 : 0,
+      ios: 0.998,
+    });
+
     const Content = (
       <Animated.View
         style={[
@@ -470,13 +474,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                 // @ts-ignore
                 ref={this.contentComponentRef}
                 overScrollMode="never"
-                decelerationRate={
-                  initialSnapIndex === 0
-                    ? Platform.OS === 'ios'
-                      ? 0.998
-                      : 0.985
-                    : 0
-                }
+                decelerationRate={initialDecelerationRate}
                 onScrollBeginDrag={this.onScrollBeginDrag}
                 onMomentumScrollEnd={this.handleMomentumScrollEnd}
                 scrollEventThrottle={1}
