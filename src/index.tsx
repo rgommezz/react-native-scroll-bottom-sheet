@@ -247,8 +247,15 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   }) => {
     if (nativeEvent.oldState === State.BEGAN) {
       this.isDragWithHandle = true;
-      // If we pull down the drawer with the handle, we set this value to compensate the amount of scroll on the FlatList
-      this.lastEndScrollY.setValue(this.lastStartScrollYValue);
+      // If we pull down the drawer with the handle, we need to apply compensation that equates
+      // to the amount of scroll, with opposite sign. On Android we use a separate animated value.
+      // On iOS we set it to 0. The reason is that on Android the TapHandler trick doesn't seem to work, so we
+      // need to work it around with a separate animated value.
+      if (Platform.OS === 'android') {
+        this.lastEndScrollY.setValue(this.lastStartScrollYValue);
+      } else {
+        this.lastStartScrollY.setValue(0);
+      }
     }
     this.onHandlerStateChange({ nativeEvent }, true);
   };
@@ -302,7 +309,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     },
   }) => {
     // Updating the position of last scroll after the momentum ends.
-    if (!this.didScrollUpAndPullDown) {
+    // Apparently android stops scroll momentum when pressing outside, investigate if that's always the case
+    // For now we are only enabling that on Android, since iOS keeps the momentum when pulling down the handle or
+    // touching outside
+    if (Platform.OS === 'android' && !this.didScrollUpAndPullDown) {
       this.lastStartScrollY.setValue(y);
       this.lastStartScrollYValue = y;
     }
@@ -320,6 +330,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     this.lastSnap =
       destSnapPoint - (didScrollUpAndPullDown ? this.lastStartScrollYValue : 0);
     if (Platform.OS === 'ios') {
+      // This is the TapGHandler trick on iOS
       // @ts-ignore
       this.iOSMasterDrawer?.current?.setNativeProps({
         maxDeltaY: this.lastSnap - this.getNormalisedSnapPoints()[0],
@@ -400,7 +411,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           destSnapPoint === snapPoints[0]
         ) {
           // We have come back to the top snapping point and the list is not scrolled to the top
-          this.lastEndScrollY.setValue(0);
+          // Resetting the compensation on Android
+          if (Platform.OS === 'android') {
+            this.lastEndScrollY.setValue(0);
+          }
           this.didSnapToDifferentThanTopWithHandle = false;
           this.isDragWithHandle = false;
         }
