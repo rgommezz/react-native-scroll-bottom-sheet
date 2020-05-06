@@ -35,6 +35,11 @@
     "url": "https://github.com/rgommezz/react-native-scroll-bottom-sheet/issues"
   },
   "homepage": "https://github.com/rgommezz/react-native-scroll-bottom-sheet#readme",
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "react-native-gesture-handler": "*"
+  },
   "devDependencies": {
     "@commitlint/config-conventional": "^8.3.4",
     "@react-native-community/bob": "^0.10.1",
@@ -52,12 +57,9 @@
     "prettier": "^2.0.5",
     "react": "~16.9.0",
     "react-native": "^0.62.2",
+    "react-native-gesture-handler": "^1.6.1",
     "release-it": "^12.6.3",
     "typescript": "^3.7.5"
-  },
-  "peerDependencies": {
-    "react": "*",
-    "react-native": "*"
   },
   "jest": {
     "preset": "react-native",
@@ -129,7 +131,6 @@
     ]
   },
   "dependencies": {
-    "react-native-gesture-handler": "^1.6.1",
     "utility-types": "^3.10.0"
   }
 }
