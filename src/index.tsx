@@ -203,7 +203,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       },
     ]);
 
-    const didHandleGestureBegin = eq(handleOldGestureState, GestureState.BEGAN);
+    const didHandleGestureBegin = eq(handleGestureState, GestureState.ACTIVE);
 
     const scrollY = cond(
       didHandleGestureBegin,
@@ -307,6 +307,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           [
             // Resetting appropriate values
             set(drawerOldGestureState, GestureState.END),
+            set(handleOldGestureState, GestureState.END),
             set(prevTranslateYOffset, state.position),
             cond(eq(scrollUpAndPullDown, 1), [
               set(
