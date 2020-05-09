@@ -156,7 +156,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const closedPosition = snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[props.initialSnapIndex];
 
-    const clock = new Clock();
+    const animationClock = new Clock();
     const dragY = new Value(0);
     const isAndroid = new Value(Platform.OS === 'android' ? 1 : 0);
     const prevTranslateYOffset = new Value(initialSnap);
@@ -271,7 +271,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         )
       ),
       runTiming({
-        clock,
+        clock: animationClock,
         from: add(prevTranslateYOffset, translationY),
         duration: 250,
         to: destSnapPoint,
