@@ -8,7 +8,6 @@ import {
   SectionList,
   SectionListProps,
   StyleSheet,
-  View,
 } from 'react-native';
 import Animated, {
   abs,
@@ -122,7 +121,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   private drawerContentRef = React.createRef<PanGestureHandler>();
   private scrollComponentRef = React.createRef<NativeViewGestureHandler>();
 
-  private iOSMasterDrawer = React.createRef<TapGestureHandler>();
+  private masterDrawer = React.createRef<TapGestureHandler>();
 
   /**
    * Reference to FlatList, ScrollView or SectionList in order to execute its imperative methods.
@@ -326,11 +325,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                 eq(snapToDifferentThanTopWithHandle, 1),
                 eq(destSnapPoint, snapPoints[0])
               ),
-              [
-                // cond(eq(isAndroid, 1), set(lastEndScrollY, 0)),
-                set(snapToDifferentThanTopWithHandle, 0),
-                set(dragWithHandle, 0),
-              ]
+              [set(snapToDifferentThanTopWithHandle, 0), set(dragWithHandle, 0)]
             ),
             stopClock(clock),
             prevTranslateYOffset,
@@ -359,7 +354,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         call([lastSnap], ([value]) => {
           // This is the TapGHandler trick on iOS
           // @ts-ignore
-          this.iOSMasterDrawer?.current?.setNativeProps({
+          this.masterDrawer?.current?.setNativeProps({
             maxDeltaY: value - this.getNormalisedSnapPoints()[0],
           });
         }),
@@ -425,11 +420,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const AnimatedScrollableComponent = this.scrollComponent;
     const initialSnap = this.getNormalisedSnapPoints()[initialSnapIndex];
 
-    const drawerContentSimultaneousHandlers =
-      Platform.OS === 'ios'
-        ? [this.scrollComponentRef, this.iOSMasterDrawer]
-        : [this.scrollComponentRef];
-
     const initialDecelerationRate = Platform.select({
       android: initialSnapIndex === 0 ? 0.985 : 0,
       ios: 0.998,
@@ -448,9 +438,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         <PanGestureHandler
           ref={this.drawerHandleRef}
           shouldCancelWhenOutside={false}
-          simultaneousHandlers={
-            Platform.OS === 'ios' ? this.iOSMasterDrawer : undefined
-          }
+          simultaneousHandlers={this.masterDrawer}
           onGestureEvent={this.onHandleGestureEvent}
           onHandlerStateChange={this.onHandleGestureEvent}
         >
@@ -458,7 +446,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         </PanGestureHandler>
         <PanGestureHandler
           ref={this.drawerContentRef}
-          simultaneousHandlers={drawerContentSimultaneousHandlers}
+          simultaneousHandlers={[this.scrollComponentRef, this.masterDrawer]}
           shouldCancelWhenOutside={false}
           onGestureEvent={this.onDrawerGestureEvent}
           onHandlerStateChange={this.onDrawerGestureEvent}
@@ -466,7 +454,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           <Animated.View style={styles.container}>
             <NativeViewGestureHandler
               ref={this.scrollComponentRef}
-              waitFor={Platform.OS === 'ios' ? this.iOSMasterDrawer : undefined}
+              waitFor={this.masterDrawer}
               simultaneousHandlers={this.drawerContentRef}
             >
               <AnimatedScrollableComponent
@@ -489,19 +477,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       </Animated.View>
     );
 
-    if (Platform.OS === 'android') {
-      return Content;
-    }
-
     return (
       <TapGestureHandler
         maxDurationMs={100000}
-        ref={this.iOSMasterDrawer}
+        ref={this.masterDrawer}
         maxDeltaY={initialSnap - this.getNormalisedSnapPoints()[0]}
+        shouldCancelWhenOutside={false}
       >
-        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
-          {Content}
-        </View>
+        {Content}
       </TapGestureHandler>
     );
   }
