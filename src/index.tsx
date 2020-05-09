@@ -50,6 +50,8 @@ const SectionListComponentType = 'SectionList' as const;
 
 const { height: windowHeight } = Dimensions.get('window');
 const DRAG_TOSS = 0.05;
+const IOS_NORMAL_DECELERATION_RATE = 0.998;
+const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
 
 type AnimatedScrollableComponent = FlatList | ScrollView | SectionList;
 
@@ -137,6 +139,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
    * Main Animated Value that drives the top position of the UI drawer at any point in time
    */
   private translateY: Animated.Node<number>;
+  private decelerationRate: Animated.Value<number>;
 
   private scrollComponent: React.ComponentType<
     FlatListProps<T> | ScrollViewProps | SectionListProps<T>
@@ -155,6 +158,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const closedPosition = snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[props.initialSnapIndex];
     const tempDestSnapPoint = new Value(0);
+    const isAndroid = new Value(Number(Platform.OS === 'android'));
+    const initialDecelerationRate = Platform.select({
+      android:
+        props.initialSnapIndex === 0 ? ANDROID_NORMAL_DECELERATION_RATE : 0,
+      ios: IOS_NORMAL_DECELERATION_RATE,
+    });
+
+    this.decelerationRate = new Value(initialDecelerationRate);
 
     const animationClock = new Clock();
     const dragY = new Value(0);
@@ -287,26 +298,24 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         ]),
         // we run the step here that is going to update position
         timing(clock, state, config),
-        // If the animation is over we stop the clock
-        call([state.finished, lastSnap], ([finished, lastSnapValue]) => {
-          if (finished === 1) {
-            const decelerationRate = Platform.select({
-              ios: 0.998,
-              android: lastSnapValue === snapPoints[0] ? 0.985 : 0,
-            });
-            // @ts-ignore
-            this.contentComponentRef.current?._component?.setNativeProps({
-              decelerationRate,
-              disableIntervalMomentum: false,
-            });
-          }
-        }),
         cond(
           state.finished,
           [
             // Resetting appropriate values
             set(drawerOldGestureState, GestureState.END),
             set(handleOldGestureState, GestureState.END),
+            set(
+              this.decelerationRate,
+              cond(
+                eq(isAndroid, 1),
+                cond(
+                  eq(lastSnap, snapPoints[0]),
+                  ANDROID_NORMAL_DECELERATION_RATE,
+                  0
+                ),
+                IOS_NORMAL_DECELERATION_RATE
+              )
+            ),
             set(prevTranslateYOffset, state.position),
             cond(eq(scrollUpAndPullDown, 1), [
               set(
@@ -352,7 +361,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           )
         ),
         call([lastSnap], ([value]) => {
-          // This is the TapGHandler trick on iOS
+          // This is the TapGHandler trick
           // @ts-ignore
           this.masterDrawer?.current?.setNativeProps({
             maxDeltaY: value - this.getNormalisedSnapPoints()[0],
@@ -420,11 +429,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const AnimatedScrollableComponent = this.scrollComponent;
     const initialSnap = this.getNormalisedSnapPoints()[initialSnapIndex];
 
-    const initialDecelerationRate = Platform.select({
-      android: initialSnapIndex === 0 ? 0.985 : 0,
-      ios: 0.998,
-    });
-
     return (
       <TapGestureHandler
         maxDurationMs={100000}
@@ -469,7 +473,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                   // @ts-ignore
                   ref={this.contentComponentRef}
                   overScrollMode="never"
-                  decelerationRate={initialDecelerationRate}
+                  // @ts-ignore
+                  decelerationRate={this.decelerationRate}
                   onScrollBeginDrag={this.onScrollBeginDrag}
                   scrollEventThrottle={1}
                   contentContainerStyle={[
