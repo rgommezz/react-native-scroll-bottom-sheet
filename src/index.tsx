@@ -425,58 +425,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       ios: 0.998,
     });
 
-    const Content = (
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          // @ts-ignore
-          {
-            transform: [{ translateY: this.translateY }],
-          },
-        ]}
-      >
-        <PanGestureHandler
-          ref={this.drawerHandleRef}
-          shouldCancelWhenOutside={false}
-          simultaneousHandlers={this.masterDrawer}
-          onGestureEvent={this.onHandleGestureEvent}
-          onHandlerStateChange={this.onHandleGestureEvent}
-        >
-          <Animated.View>{renderHandle()}</Animated.View>
-        </PanGestureHandler>
-        <PanGestureHandler
-          ref={this.drawerContentRef}
-          simultaneousHandlers={[this.scrollComponentRef, this.masterDrawer]}
-          shouldCancelWhenOutside={false}
-          onGestureEvent={this.onDrawerGestureEvent}
-          onHandlerStateChange={this.onDrawerGestureEvent}
-        >
-          <Animated.View style={styles.container}>
-            <NativeViewGestureHandler
-              ref={this.scrollComponentRef}
-              waitFor={this.masterDrawer}
-              simultaneousHandlers={this.drawerContentRef}
-            >
-              <AnimatedScrollableComponent
-                {...rest}
-                bounces={false}
-                // @ts-ignore
-                ref={this.contentComponentRef}
-                overScrollMode="never"
-                decelerationRate={initialDecelerationRate}
-                onScrollBeginDrag={this.onScrollBeginDrag}
-                scrollEventThrottle={1}
-                contentContainerStyle={[
-                  rest.contentContainerStyle,
-                  { paddingBottom: this.getNormalisedSnapPoints()[0] },
-                ]}
-              />
-            </NativeViewGestureHandler>
-          </Animated.View>
-        </PanGestureHandler>
-      </Animated.View>
-    );
-
     return (
       <TapGestureHandler
         maxDurationMs={100000}
@@ -484,7 +432,55 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         maxDeltaY={initialSnap - this.getNormalisedSnapPoints()[0]}
         shouldCancelWhenOutside={false}
       >
-        {Content}
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            // @ts-ignore
+            {
+              transform: [{ translateY: this.translateY }],
+            },
+          ]}
+        >
+          <PanGestureHandler
+            ref={this.drawerHandleRef}
+            shouldCancelWhenOutside={false}
+            simultaneousHandlers={this.masterDrawer}
+            onGestureEvent={this.onHandleGestureEvent}
+            onHandlerStateChange={this.onHandleGestureEvent}
+          >
+            <Animated.View>{renderHandle()}</Animated.View>
+          </PanGestureHandler>
+          <PanGestureHandler
+            ref={this.drawerContentRef}
+            simultaneousHandlers={[this.scrollComponentRef, this.masterDrawer]}
+            shouldCancelWhenOutside={false}
+            onGestureEvent={this.onDrawerGestureEvent}
+            onHandlerStateChange={this.onDrawerGestureEvent}
+          >
+            <Animated.View style={styles.container}>
+              <NativeViewGestureHandler
+                ref={this.scrollComponentRef}
+                waitFor={this.masterDrawer}
+                simultaneousHandlers={this.drawerContentRef}
+              >
+                <AnimatedScrollableComponent
+                  {...rest}
+                  bounces={false}
+                  // @ts-ignore
+                  ref={this.contentComponentRef}
+                  overScrollMode="never"
+                  decelerationRate={initialDecelerationRate}
+                  onScrollBeginDrag={this.onScrollBeginDrag}
+                  scrollEventThrottle={1}
+                  contentContainerStyle={[
+                    rest.contentContainerStyle,
+                    { paddingBottom: this.getNormalisedSnapPoints()[0] },
+                  ]}
+                />
+              </NativeViewGestureHandler>
+            </Animated.View>
+          </PanGestureHandler>
+        </Animated.View>
       </TapGestureHandler>
     );
   }
