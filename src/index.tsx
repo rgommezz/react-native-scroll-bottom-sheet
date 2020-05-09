@@ -18,7 +18,6 @@ import Animated, {
   Clock,
   clockRunning,
   cond,
-  debug,
   Easing,
   eq,
   event,
@@ -161,10 +160,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const animationClock = new Clock();
     const dragY = new Value(0);
     const prevTranslateYOffset = new Value(initialSnap);
-    const handleGestureState = new Value(-1);
-    const handleOldGestureState = new Value(-1);
-    const drawerGestureState = new Value(-1);
-    const drawerOldGestureState = new Value(-1);
+    const handleGestureState = new Value<GestureState>(-1);
+    const handleOldGestureState = new Value<GestureState>(-1);
+    const drawerGestureState = new Value<GestureState>(-1);
+    const drawerOldGestureState = new Value<GestureState>(-1);
     const velocityY = new Value(0);
     const lastStartScrollY = new Value(0);
     const translationY = new Value(initialSnap);
@@ -180,8 +179,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       {
         nativeEvent: {
           translationY: dragY,
-          state: handleGestureState,
           oldState: handleOldGestureState,
+          state: handleGestureState,
           velocityY: velocityY,
         },
       },
@@ -190,8 +189,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       {
         nativeEvent: {
           translationY: dragY,
-          state: drawerGestureState,
           oldState: drawerOldGestureState,
+          state: drawerGestureState,
           velocityY: velocityY,
         },
       },
@@ -280,8 +279,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       return [
         cond(clockRunning(clock), 0, [
           // If the clock isn't running we reset all the animation params and start the clock
-          debug('from', from),
-          debug('to', to),
           set(state.finished, 0),
           set(state.time, 0),
           set(state.position, from),
@@ -309,6 +306,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           state.finished,
           [
             // Resetting appropriate values
+            set(drawerOldGestureState, GestureState.END),
             set(prevTranslateYOffset, state.position),
             cond(eq(scrollUpAndPullDown, 1), [
               set(
@@ -344,8 +342,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const translateYOffset = cond(
       didGestureFinish,
-      // TODO didGestureFinish immediately fire on iOS when scrolling through, wtf.
-      // On Android it works fine
       [
         didScrollUpAndPullDown,
         setTranslationY,
