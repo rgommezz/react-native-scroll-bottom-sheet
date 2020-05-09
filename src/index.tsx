@@ -153,7 +153,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     // @ts-ignore
     this.scrollComponent = Animated.createAnimatedComponent(ScrollComponent);
     const snapPoints = this.getNormalisedSnapPoints();
-    console.log(snapPoints);
     const openPosition = snapPoints[0];
     const closedPosition = snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[props.initialSnapIndex];
@@ -162,7 +161,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const animationClock = new Clock();
     const dragY = new Value(0);
     const prevTranslateYOffset = new Value(initialSnap);
+    const handleGestureState = new Value(-1);
     const handleOldGestureState = new Value(-1);
+    const drawerGestureState = new Value(-1);
     const drawerOldGestureState = new Value(-1);
     const velocityY = new Value(0);
     const lastStartScrollY = new Value(0);
@@ -179,6 +180,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       {
         nativeEvent: {
           translationY: dragY,
+          state: handleGestureState,
           oldState: handleOldGestureState,
           velocityY: velocityY,
         },
@@ -188,6 +190,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       {
         nativeEvent: {
           translationY: dragY,
+          state: drawerGestureState,
           oldState: drawerOldGestureState,
           velocityY: velocityY,
         },
@@ -210,8 +213,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     );
 
     const didGestureFinish = or(
-      eq(handleOldGestureState, GestureState.ACTIVE),
-      eq(drawerOldGestureState, GestureState.ACTIVE)
+      and(
+        eq(handleOldGestureState, GestureState.ACTIVE),
+        eq(handleGestureState, GestureState.END)
+      ),
+      and(
+        eq(drawerOldGestureState, GestureState.ACTIVE),
+        eq(drawerGestureState, GestureState.END)
+      )
     );
 
     const didScrollUpAndPullDown = cond(
@@ -271,6 +280,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       return [
         cond(clockRunning(clock), 0, [
           // If the clock isn't running we reset all the animation params and start the clock
+          debug('from', from),
+          debug('to', to),
           set(state.finished, 0),
           set(state.time, 0),
           set(state.position, from),
@@ -333,19 +344,15 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const translateYOffset = cond(
       didGestureFinish,
+      // TODO didGestureFinish immediately fire on iOS when scrolling through, wtf.
+      // On Android it works fine
       [
         didScrollUpAndPullDown,
         setTranslationY,
         set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
         set(destSnapPoint, currentSnapPoint()),
         set(dragY, 0),
-        set(
-          lastSnap,
-          sub(
-            destSnapPoint,
-            cond(eq(didScrollUpAndPullDown, 1), lastStartScrollY, 0)
-          )
-        ),
+        set(lastSnap, destSnapPoint),
         call([lastSnap], ([value]) => {
           // This is the TapGHandler trick on iOS
           // @ts-ignore
