@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import {
-  Animated,
   Dimensions,
   FlatList,
   FlatListProps,
@@ -11,13 +10,37 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
+import Animated, {
+  abs,
+  add,
+  and,
+  call,
+  Clock,
+  clockRunning,
+  cond,
+  Easing,
+  eq,
+  event,
+  Extrapolate,
+  greaterOrEq,
+  greaterThan,
+  interpolate,
+  multiply,
+  not,
+  or,
+  set,
+  startClock,
+  stopClock,
+  sub,
+  timing,
+  Value,
+} from 'react-native-reanimated';
 import {
   NativeViewGestureHandler,
   PanGestureHandler,
   PanGestureHandlerProperties,
-  PanGestureHandlerStateChangeEvent,
   ScrollView,
-  State,
+  State as GestureState,
   TapGestureHandler,
 } from 'react-native-gesture-handler';
 import { Assign } from 'utility-types';
@@ -27,6 +50,7 @@ const ScrollViewComponentType = 'ScrollView' as const;
 const SectionListComponentType = 'SectionList' as const;
 
 const { height: windowHeight } = Dimensions.get('window');
+const DRAG_TOSS = 0.05;
 
 type AnimatedScrollableComponent = FlatList | ScrollView | SectionList;
 
@@ -42,6 +66,13 @@ type SectionListOption<T> = Assign<
   { componentType: typeof SectionListComponentType },
   SectionListProps<T>
 >;
+
+interface TimingParams {
+  clock: Animated.Clock;
+  from: Animated.Node<number>;
+  to: Animated.Node<number>;
+  duration: number;
+}
 
 type CommonProps = {
   /**
@@ -67,7 +98,7 @@ type CommonProps = {
    * 0 => closed
    * 1 => fully opened
    */
-  animatedPosition?: Animated.Value;
+  animatedPosition?: Animated.Value<number>;
   /**
    * This value is useful if you want to take into consideration safe area insets
    * when applying percentages for snapping points. We recommend using react-native-safe-area-context
@@ -101,55 +132,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
    * Callback executed whenever we start scrolling on the Scrollable component
    */
   private onScrollBeginDrag: ScrollViewProps['onScrollBeginDrag'];
-  /**
-   * Callback executed per frame, as long as the pan handler is active (like when we are dragging)
-   */
-  private onGestureEvent: PanGestureHandlerProperties['onGestureEvent'];
-  /**
-   * Animated value which reflects the amount we drag our finger vertically over the screen.
-   * Its range is determined by the screen height, being [-SCREEN_HEIGHT, +SCREEN_HEIGHT]
-   * Negative values indicate dragging the finger up, positive values down
-   */
-  private dragY = new Animated.Value(0);
-  /**
-   * Animated value that acts as an accumulator on the Y axis.
-   */
-  private translateYOffset: Animated.Value;
-  /**
-   * Animated value that keeps track of how far have we scrolled on the FlatList.
-   * This is key to determine when should be able to pull down the drawer, which is exactly
-   * once we reach the top of the FlatList
-   */
-  private lastStartScrollY = new Animated.Value(0);
+  private onHandleGestureEvent: PanGestureHandlerProperties['onGestureEvent'];
+  private onDrawerGestureEvent: PanGestureHandlerProperties['onGestureEvent'];
   /**
    * Main Animated Value that drives the top position of the UI drawer at any point in time
    */
-  private translateY: Animated.AnimatedInterpolation;
-  /**
-   * The underlying numeric value of lastStartScrollY
-   */
-  private lastStartScrollYValue = 0;
-  /**
-   * Last snapping Y position
-   */
-  private lastSnap: number;
-  /**
-   * Boolean that indicates whether we are pulling down/up the drawer with the handle.
-   */
-  private isDragWithHandle: boolean = false;
-
-  private didSnapToDifferentThanTopWithHandle: boolean = false;
-
-  /**
-   * Animated value used to be able to pull down the drawer with the handle
-   * when the list is not scrolled to the top
-   */
-  private lastEndScrollY: Animated.Value = new Animated.Value(0);
-
-  /**
-   * Boolean that indicates a continuous gesture that did scroll up and pull down the drawer at the same time
-   */
-  private didScrollUpAndPullDown = false;
+  private translateY: Animated.Node<number>;
 
   private scrollComponent: React.ComponentType<
     FlatListProps<T> | ScrollViewProps | SectionListProps<T>
@@ -161,56 +149,234 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   constructor(props: Props<T>) {
     super(props);
     const ScrollComponent = this.getScrollComponent();
-    this.scrollComponent = Animated.createAnimatedComponent(
-      // @ts-ignore
-      ScrollComponent
-    );
+    // @ts-ignore
+    this.scrollComponent = Animated.createAnimatedComponent(ScrollComponent);
     const snapPoints = this.getNormalisedSnapPoints();
     const openPosition = snapPoints[0];
     const closedPosition = snapPoints[snapPoints.length - 1];
-    this.lastSnap = snapPoints[props.initialSnapIndex];
+    const initialSnap = snapPoints[props.initialSnapIndex];
 
-    this.translateYOffset = new Animated.Value(this.lastSnap);
-    this.onGestureEvent = Animated.event(
-      [{ nativeEvent: { translationY: this.dragY } }],
-      { useNativeDriver: true }
-    );
-    this.onScrollBeginDrag = Animated.event(
-      [{ nativeEvent: { contentOffset: { y: this.lastStartScrollY } } }],
-      { useNativeDriver: true }
-    );
+    const clock = new Clock();
+    const dragY = new Value(0);
+    const isAndroid = new Value(Platform.OS === 'android' ? 1 : 0);
+    const prevTranslateYOffset = new Value(initialSnap);
+    const handleOldGestureState = new Value(-1);
+    const drawerOldGestureState = new Value(-1);
+    const velocityY = new Value(0);
+    const lastStartScrollY = new Value(0);
+    const translationY = new Value(initialSnap);
+    const destSnapPoint = new Value(0);
 
-    this.lastStartScrollY.addListener(({ value }) => {
-      this.lastStartScrollYValue = value;
+    // Booleans transformed to animated values
+    const lastSnap = new Value(initialSnap);
+    const dragWithHandle = new Value(0);
+    const scrollUpAndPullDown = new Value(0);
+    const snapToDifferentThanTopWithHandle = new Value(0);
+
+    call([lastSnap], ([value]) => {
+      // This is the TapGHandler trick on iOS
+      // @ts-ignore
+      this.iOSMasterDrawer?.current?.setNativeProps({
+        maxDeltaY: value - this.getNormalisedSnapPoints()[0],
+      });
     });
 
-    this.translateY = Animated.add(
-      Animated.add(this.translateYOffset, this.lastEndScrollY),
-      Animated.add(
-        this.dragY,
-        Animated.multiply(new Animated.Value(-1), this.lastStartScrollY)
-      )
-    ).interpolate({
-      inputRange: [openPosition, closedPosition],
-      outputRange: [openPosition, closedPosition],
-      extrapolate: 'clamp',
-    });
+    this.onHandleGestureEvent = event([
+      {
+        nativeEvent: {
+          translationY: dragY,
+          oldState: handleOldGestureState,
+          velocityY: velocityY,
+        },
+      },
+    ]);
+    this.onDrawerGestureEvent = event([
+      {
+        nativeEvent: {
+          translationY: dragY,
+          oldState: drawerOldGestureState,
+          velocityY: velocityY,
+        },
+      },
+    ]);
+    this.onScrollBeginDrag = event([
+      {
+        nativeEvent: {
+          contentOffset: { y: lastStartScrollY },
+        },
+      },
+    ]);
 
-    if (this.props.animatedPosition) {
-      // We are using timing() and a duration of 0 for rigid tracking
-      Animated.timing(this.props.animatedPosition, {
-        // @ts-ignore
-        toValue: this.translateY.interpolate({
-          inputRange: [openPosition, closedPosition],
-          outputRange: [1, 0],
-        }),
-        duration: 0,
-      }).start();
+    const didHandleGestureBegin = eq(handleOldGestureState, GestureState.BEGAN);
+
+    const lastEndScrollY = [
+      cond(didHandleGestureBegin, set(dragWithHandle, 1)),
+      cond(and(eq(dragWithHandle, 1), eq(isAndroid, 1)), lastStartScrollY, 0),
+    ];
+
+    const didGestureFinish = or(
+      eq(handleOldGestureState, GestureState.ACTIVE),
+      eq(drawerOldGestureState, GestureState.ACTIVE)
+    );
+
+    const didScrollUpAndPullDown = cond(
+      and(
+        greaterOrEq(dragY, lastStartScrollY),
+        greaterThan(lastStartScrollY, 0)
+      ),
+      set(scrollUpAndPullDown, 1)
+    );
+
+    const setTranslationY = cond(
+      and(
+        not(dragWithHandle),
+        not(snapToDifferentThanTopWithHandle),
+        not(greaterOrEq(dragY, lastStartScrollY))
+      ),
+      set(translationY, sub(dragY, lastStartScrollY)),
+      set(translationY, dragY)
+    );
+
+    const extraOffset = cond(eq(scrollUpAndPullDown, 1), lastStartScrollY, 0);
+    const endOffsetY = add(
+      lastSnap,
+      translationY,
+      multiply(DRAG_TOSS, velocityY)
+    );
+
+    const currentSnapPoint = (i = 0): Animated.Node<number> | number =>
+      cond(
+        eq(add(i, 1), snapPoints.length),
+        add(snapPoints[i], extraOffset),
+        cond(
+          greaterThan(
+            abs(sub(add(snapPoints[0], extraOffset), endOffsetY)),
+            abs(sub(add(snapPoints[i], extraOffset), endOffsetY))
+          ),
+          add(snapPoints[i], extraOffset),
+          currentSnapPoint(i + 1)
+        )
+      );
+
+    const translateYOffset = cond(didGestureFinish, [
+      didScrollUpAndPullDown,
+      setTranslationY,
+      set(destSnapPoint, currentSnapPoint()),
+      set(dragY, 0),
+      set(
+        lastSnap,
+        sub(
+          destSnapPoint,
+          cond(eq(didScrollUpAndPullDown, 1), lastStartScrollY, 0)
+        )
+      ),
+      runTiming({
+        clock,
+        from: add(prevTranslateYOffset, translationY),
+        duration: 250,
+        to: destSnapPoint,
+      }),
+    ]);
+
+    function runTiming({ clock, from, to, duration = 400 }: TimingParams) {
+      const state = {
+        finished: new Value<0 | 1>(0),
+        position: new Value(0),
+        time: new Value(0),
+        frameTime: new Value(0),
+      };
+
+      const config = {
+        duration,
+        toValue: new Value(0),
+        easing: Easing.inOut(Easing.ease),
+      };
+
+      call([state.finished, lastSnap], ([finished, lastSnapValue]) => {
+        if (finished === 1) {
+          const decelerationRate = Platform.select({
+            ios: 0.998,
+            android: lastSnapValue === snapPoints[0] ? 0.985 : 0,
+          });
+          // @ts-ignore
+          this.contentComponentRef.current?._component?.setNativeProps({
+            decelerationRate,
+            disableIntervalMomentum: false,
+          });
+        }
+      });
+
+      return [
+        cond(clockRunning(clock), 0, [
+          // If the clock isn't running we reset all the animation params and start the clock
+          set(state.finished, 0),
+          set(state.time, 0),
+          set(state.position, from),
+          set(state.frameTime, 0),
+          set(config.toValue, to),
+          startClock(clock),
+        ]),
+        // we run the step here that is going to update position
+        timing(clock, state, config),
+        // If the animation is over we stop the clock
+        cond(
+          state.finished,
+          [
+            // Resetting appropriate values
+            set(prevTranslateYOffset, state.position),
+            cond(eq(scrollUpAndPullDown, 1), [
+              set(
+                prevTranslateYOffset,
+                sub(prevTranslateYOffset, lastStartScrollY)
+              ),
+              set(lastStartScrollY, 0),
+              set(scrollUpAndPullDown, 0),
+            ]),
+            cond(
+              and(eq(dragWithHandle, 1), not(eq(destSnapPoint, snapPoints[0]))),
+              set(snapToDifferentThanTopWithHandle, 1)
+            ),
+            cond(
+              and(
+                eq(snapToDifferentThanTopWithHandle, 1),
+                eq(destSnapPoint, snapPoints[0])
+              ),
+              [
+                // @ts-ignore
+                cond(eq(isAndroid, 1), set(lastEndScrollY, 0)),
+                set(snapToDifferentThanTopWithHandle, 0),
+                set(dragWithHandle, 0),
+              ]
+            ),
+            stopClock(clock),
+            prevTranslateYOffset,
+          ],
+          // We made the block return the updated position,
+          state.position
+        ),
+      ];
     }
-  }
 
-  componentWillUnmount() {
-    this.lastStartScrollY.removeAllListeners();
+    this.translateY = interpolate(
+      add(
+        translateYOffset,
+        lastEndScrollY,
+        dragY,
+        multiply(
+          cond(
+            and(eq(isAndroid, 0), eq(dragWithHandle, 1)),
+            0,
+            lastStartScrollY
+          ),
+          -1
+        )
+      ),
+      {
+        inputRange: [openPosition, closedPosition],
+        outputRange: [openPosition, closedPosition],
+        extrapolate: Extrapolate.CLAMP,
+      }
+    );
   }
 
   getNormalisedSnapPoints = () => {
@@ -242,191 +408,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     }
   };
 
-  onHeaderHandlerStateChange: PanGestureHandlerProperties['onHandlerStateChange'] = ({
-    nativeEvent,
-  }) => {
-    if (nativeEvent.oldState === State.BEGAN) {
-      this.isDragWithHandle = true;
-      // If we pull down the drawer with the handle, we need to apply compensation that equates
-      // to the amount of scroll, with opposite sign. On Android we use a separate animated value.
-      // On iOS we set it to 0. The reason is that on Android the TapHandler trick doesn't seem to work, so we
-      // need to work it around with a separate animated value.
-      if (Platform.OS === 'android') {
-        this.lastEndScrollY.setValue(this.lastStartScrollYValue);
-      } else {
-        this.lastStartScrollY.setValue(0);
-      }
-    }
-    this.onHandlerStateChange({ nativeEvent }, true);
-  };
-
-  getSnapPointAndAnimationDuration = (
-    velocityY: number,
-    translationY: number,
-    originalTranslationY: number,
-    didScrollUpAndPullDown: boolean = false
-  ) => {
-    let animationDuration = 250;
-    const snapPoints = this.getNormalisedSnapPoints();
-    const extraOffset = didScrollUpAndPullDown ? this.lastStartScrollYValue : 0;
-    const dragToss = 0.05;
-    const endOffsetY = this.lastSnap + translationY + dragToss * velocityY;
-
-    let destSnapPoint = snapPoints[0] + extraOffset;
-    // tslint:disable-next-line:prefer-for-of
-    for (let i = 0; i < snapPoints.length; i++) {
-      const snapPoint = snapPoints[i] + extraOffset;
-      const distFromSnap = Math.abs(snapPoint - endOffsetY);
-      if (distFromSnap < Math.abs(destSnapPoint - endOffsetY)) {
-        destSnapPoint = snapPoint;
-      }
-    }
-
-    const isNewSnapPointAtTheEdges =
-      destSnapPoint === snapPoints[0] || snapPoints[snapPoints.length - 1];
-    const shouldSnapToNewPoint = this.lastSnap !== destSnapPoint;
-    const didDragMoreThanSnappingDistance =
-      Math.abs(originalTranslationY) >= Math.abs(this.lastSnap - destSnapPoint);
-    const didScrollUpAndPullDownContinuously =
-      translationY >= this.lastStartScrollYValue &&
-      this.lastStartScrollYValue > 0;
-
-    if (
-      isNewSnapPointAtTheEdges &&
-      shouldSnapToNewPoint &&
-      didDragMoreThanSnappingDistance &&
-      !didScrollUpAndPullDownContinuously
-    ) {
-      animationDuration = 0;
-    }
-
-    return { destSnapPoint, duration: animationDuration };
-  };
-
-  handleMomentumScrollEnd: ScrollViewProps['onMomentumScrollEnd'] = ({
-    nativeEvent: {
-      contentOffset: { y },
-    },
-  }) => {
-    // Updating the position of last scroll after the momentum ends.
-    // Apparently android stops scroll momentum when pressing outside, investigate if that's always the case
-    // For now we are only enabling that on Android, since iOS keeps the momentum when pulling down the handle or
-    // touching outside
-    if (Platform.OS === 'android' && !this.didScrollUpAndPullDown) {
-      this.lastStartScrollY.setValue(y);
-      this.lastStartScrollYValue = y;
-    }
-  };
-
-  resetValues = (
-    translationY: number,
-    destSnapPoint: number,
-    didScrollUpAndPullDown: boolean
-  ) => {
-    this.translateYOffset.extractOffset();
-    this.translateYOffset.setValue(translationY);
-    this.translateYOffset.flattenOffset();
-    this.dragY.setValue(0);
-    this.lastSnap =
-      destSnapPoint - (didScrollUpAndPullDown ? this.lastStartScrollYValue : 0);
-    if (Platform.OS === 'ios') {
-      // This is the TapGHandler trick on iOS
-      // @ts-ignore
-      this.iOSMasterDrawer?.current?.setNativeProps({
-        maxDeltaY: this.lastSnap - this.getNormalisedSnapPoints()[0],
-      });
-    }
-  };
-
-  onHandlerStateChange = (
-    { nativeEvent }: PanGestureHandlerStateChangeEvent,
-    isWithHandle: boolean = false
-  ) => {
-    const snapPoints = this.getNormalisedSnapPoints();
-    if (
-      nativeEvent.oldState === State.ACTIVE &&
-      nativeEvent.state === State.END
-    ) {
-      // Translation of the pan gesture along Y axis accumulated over the time of the gesture.
-      let { velocityY, translationY } = nativeEvent;
-      if (
-        !isWithHandle &&
-        !this.didSnapToDifferentThanTopWithHandle &&
-        !(translationY >= this.lastStartScrollYValue)
-      ) {
-        // We offset it with the position of the scroll
-        translationY -= this.lastStartScrollYValue;
-      } else if (
-        translationY >= this.lastStartScrollYValue &&
-        this.lastStartScrollYValue > 0
-      ) {
-        this.didScrollUpAndPullDown = true;
-      }
-
-      const { destSnapPoint, duration } = this.getSnapPointAndAnimationDuration(
-        velocityY,
-        translationY,
-        nativeEvent.translationY,
-        this.didScrollUpAndPullDown
-      );
-
-      this.resetValues(
-        translationY,
-        destSnapPoint,
-        this.didScrollUpAndPullDown
-      );
-
-      Animated.timing(this.translateYOffset, {
-        toValue: destSnapPoint,
-        duration,
-        useNativeDriver: true,
-      }).start(() => {
-        const decelerationRate = Platform.select({
-          ios: 0.998,
-          android: this.lastSnap === snapPoints[0] ? 0.985 : 0,
-        });
-        // @ts-ignore
-        this.contentComponentRef.current?._component?.setNativeProps({
-          decelerationRate,
-          disableIntervalMomentum: false,
-        });
-        if (this.didScrollUpAndPullDown) {
-          // Compensate values between startScroll (set it to 0) and restore the final amount from translateYOffset;
-          this.translateYOffset.extractOffset();
-          this.translateYOffset.setValue(-this.lastStartScrollYValue);
-          this.translateYOffset.flattenOffset();
-          this.lastStartScrollY.setValue(0);
-          this.lastStartScrollYValue = 0;
-          this.didScrollUpAndPullDown = false;
-        }
-
-        if (
-          this.isDragWithHandle &&
-          destSnapPoint !== this.props.snapPoints[0]
-        ) {
-          // We have snapped to any snapping point different than top with the handle
-          this.didSnapToDifferentThanTopWithHandle = true;
-        } else if (
-          this.didSnapToDifferentThanTopWithHandle &&
-          destSnapPoint === snapPoints[0]
-        ) {
-          // We have come back to the top snapping point and the list is not scrolled to the top
-          // Resetting the compensation on Android
-          if (Platform.OS === 'android') {
-            this.lastEndScrollY.setValue(0);
-          }
-          this.didSnapToDifferentThanTopWithHandle = false;
-          this.isDragWithHandle = false;
-        }
-
-        const snapIndex = snapPoints.findIndex(p => p === destSnapPoint);
-        if (typeof this.props.onSettle === 'function') {
-          this.props.onSettle(snapIndex);
-        }
-      });
-    }
-  };
-
   render() {
     const {
       renderHandle,
@@ -438,6 +419,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       ...rest
     } = this.props;
     const AnimatedScrollableComponent = this.scrollComponent;
+    const initialSnap = this.getNormalisedSnapPoints()[initialSnapIndex];
 
     const drawerContentSimultaneousHandlers =
       Platform.OS === 'ios'
@@ -453,6 +435,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
+          // @ts-ignore
           {
             transform: [{ translateY: this.translateY }],
           },
@@ -464,8 +447,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           simultaneousHandlers={
             Platform.OS === 'ios' ? this.iOSMasterDrawer : undefined
           }
-          onGestureEvent={this.onGestureEvent}
-          onHandlerStateChange={this.onHeaderHandlerStateChange}
+          onGestureEvent={this.onHandleGestureEvent}
+          onHandlerStateChange={this.onHandleGestureEvent}
         >
           <Animated.View>{renderHandle()}</Animated.View>
         </PanGestureHandler>
@@ -473,8 +456,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           ref={this.drawerContentRef}
           simultaneousHandlers={drawerContentSimultaneousHandlers}
           shouldCancelWhenOutside={false}
-          onGestureEvent={this.onGestureEvent}
-          onHandlerStateChange={this.onHandlerStateChange}
+          onGestureEvent={this.onDrawerGestureEvent}
+          onHandlerStateChange={this.onDrawerGestureEvent}
         >
           <Animated.View style={styles.container}>
             <NativeViewGestureHandler
@@ -490,7 +473,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                 overScrollMode="never"
                 decelerationRate={initialDecelerationRate}
                 onScrollBeginDrag={this.onScrollBeginDrag}
-                onMomentumScrollEnd={this.handleMomentumScrollEnd}
                 scrollEventThrottle={1}
                 contentContainerStyle={[
                   rest.contentContainerStyle,
@@ -511,7 +493,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       <TapGestureHandler
         maxDurationMs={100000}
         ref={this.iOSMasterDrawer}
-        maxDeltaY={this.lastSnap - this.getNormalisedSnapPoints()[0]}
+        maxDeltaY={initialSnap - this.getNormalisedSnapPoints()[0]}
       >
         <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
           {Content}
