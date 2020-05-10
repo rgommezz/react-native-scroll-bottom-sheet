@@ -38,7 +38,6 @@ export default function App() {
       <ScrollBottomSheet<string>
         componentType="FlatList"
         topInset={24}
-        // @ts-ignore
         animatedPosition={animatedPosition.current}
         snapPoints={snapPointsFromTop}
         initialSnapIndex={2}
