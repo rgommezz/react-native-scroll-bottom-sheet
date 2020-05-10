@@ -34,6 +34,7 @@ import Animated, {
   sub,
   timing,
   Value,
+  onChange,
 } from 'react-native-reanimated';
 import {
   NativeViewGestureHandler,
@@ -139,9 +140,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
    * Reference to FlatList, ScrollView or SectionList in order to execute its imperative methods.
    */
   private contentComponentRef = React.createRef<AnimatedScrollableComponent>();
-  /**
-   * Callback executed whenever we start scrolling on the Scrollable component
-   */
   private onScrollBeginDrag: ScrollViewProps['onScrollBeginDrag'];
   private onHandleGestureEvent: PanGestureHandlerProperties['onGestureEvent'];
   private onDrawerGestureEvent: PanGestureHandlerProperties['onGestureEvent'];
@@ -149,6 +147,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
    * Main Animated Value that drives the top position of the UI drawer at any point in time
    */
   private translateY: Animated.Node<number>;
+  /**
+   * Animated value that keeps track of the position: 0 => closed, 1 => opened
+   */
+  private position: Animated.Node<number>;
   private decelerationRate: Animated.Value<number>;
 
   private scrollComponent: React.ComponentType<
@@ -196,7 +198,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const translationY = new Value(initialSnap);
     const destSnapPoint = new Value(0);
 
-    // Booleans transformed to animated values
     const lastSnap = new Value(initialSnap);
     const dragWithHandle = new Value(0);
     const scrollUpAndPullDown = new Value(0);
@@ -336,7 +337,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           set(config.toValue, to),
           startClock(clock),
         ]),
-        // we run the step here that is going to update position
+        // We run the step here that is going to update position
         timing(clock, state, config),
         cond(
           state.finished,
@@ -433,6 +434,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         extrapolate: Extrapolate.CLAMP,
       }
     );
+
+    this.position = interpolate(this.translateY, {
+      inputRange: [openPosition, closedPosition],
+      outputRange: [1, 0],
+      extrapolate: Extrapolate.CLAMP,
+    });
   }
 
   getNormalisedSnapPoints = () => {
@@ -527,6 +534,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             </NativeViewGestureHandler>
           </Animated.View>
         </PanGestureHandler>
+        {this.props.animatedPosition && (
+          <Animated.Code
+            exec={onChange(
+              this.position,
+              set(this.props.animatedPosition, this.position)
+            )}
+          />
+        )}
       </Animated.View>
     );
 
