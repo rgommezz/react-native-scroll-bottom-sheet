@@ -8,6 +8,7 @@ import {
   SectionList,
   SectionListProps,
   StyleSheet,
+  View,
 } from 'react-native';
 import Animated, {
   abs,
@@ -429,63 +430,86 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const AnimatedScrollableComponent = this.scrollComponent;
     const initialSnap = this.getNormalisedSnapPoints()[initialSnapIndex];
 
+    const Content = (
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          // @ts-ignore
+          {
+            transform: [{ translateY: this.translateY }],
+          },
+        ]}
+      >
+        <PanGestureHandler
+          ref={this.drawerHandleRef}
+          shouldCancelWhenOutside={false}
+          simultaneousHandlers={this.masterDrawer}
+          onGestureEvent={this.onHandleGestureEvent}
+          onHandlerStateChange={this.onHandleGestureEvent}
+        >
+          <Animated.View>{renderHandle()}</Animated.View>
+        </PanGestureHandler>
+        <PanGestureHandler
+          ref={this.drawerContentRef}
+          simultaneousHandlers={[this.scrollComponentRef, this.masterDrawer]}
+          shouldCancelWhenOutside={false}
+          onGestureEvent={this.onDrawerGestureEvent}
+          onHandlerStateChange={this.onDrawerGestureEvent}
+        >
+          <Animated.View style={styles.container}>
+            <NativeViewGestureHandler
+              ref={this.scrollComponentRef}
+              waitFor={this.masterDrawer}
+              simultaneousHandlers={this.drawerContentRef}
+            >
+              <AnimatedScrollableComponent
+                {...rest}
+                bounces={false}
+                // @ts-ignore
+                ref={this.contentComponentRef}
+                overScrollMode="never"
+                // @ts-ignore
+                decelerationRate={this.decelerationRate}
+                onScrollBeginDrag={this.onScrollBeginDrag}
+                scrollEventThrottle={1}
+                contentContainerStyle={[
+                  rest.contentContainerStyle,
+                  { paddingBottom: this.getNormalisedSnapPoints()[0] },
+                ]}
+              />
+            </NativeViewGestureHandler>
+          </Animated.View>
+        </PanGestureHandler>
+      </Animated.View>
+    );
+
+    // On Android, having an intermediary view with pointerEvents="box-none", breaks the
+    // waitFor logic
+    if (Platform.OS === 'android') {
+      return (
+        <TapGestureHandler
+          maxDurationMs={100000}
+          ref={this.masterDrawer}
+          maxDeltaY={initialSnap - this.getNormalisedSnapPoints()[0]}
+          shouldCancelWhenOutside={false}
+        >
+          {Content}
+        </TapGestureHandler>
+      );
+    }
+
+    // On iOS, We need to wrap the content on a view with PointerEvents box-none
+    // So that we can start scrolling automatically when reaching the top without
+    // Stopping the gesture
     return (
       <TapGestureHandler
         maxDurationMs={100000}
         ref={this.masterDrawer}
         maxDeltaY={initialSnap - this.getNormalisedSnapPoints()[0]}
-        shouldCancelWhenOutside={false}
       >
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFillObject,
-            // @ts-ignore
-            {
-              transform: [{ translateY: this.translateY }],
-            },
-          ]}
-        >
-          <PanGestureHandler
-            ref={this.drawerHandleRef}
-            shouldCancelWhenOutside={false}
-            simultaneousHandlers={this.masterDrawer}
-            onGestureEvent={this.onHandleGestureEvent}
-            onHandlerStateChange={this.onHandleGestureEvent}
-          >
-            <Animated.View>{renderHandle()}</Animated.View>
-          </PanGestureHandler>
-          <PanGestureHandler
-            ref={this.drawerContentRef}
-            simultaneousHandlers={[this.scrollComponentRef, this.masterDrawer]}
-            shouldCancelWhenOutside={false}
-            onGestureEvent={this.onDrawerGestureEvent}
-            onHandlerStateChange={this.onDrawerGestureEvent}
-          >
-            <Animated.View style={styles.container}>
-              <NativeViewGestureHandler
-                ref={this.scrollComponentRef}
-                waitFor={this.masterDrawer}
-                simultaneousHandlers={this.drawerContentRef}
-              >
-                <AnimatedScrollableComponent
-                  {...rest}
-                  bounces={false}
-                  // @ts-ignore
-                  ref={this.contentComponentRef}
-                  overScrollMode="never"
-                  // @ts-ignore
-                  decelerationRate={this.decelerationRate}
-                  onScrollBeginDrag={this.onScrollBeginDrag}
-                  scrollEventThrottle={1}
-                  contentContainerStyle={[
-                    rest.contentContainerStyle,
-                    { paddingBottom: this.getNormalisedSnapPoints()[0] },
-                  ]}
-                />
-              </NativeViewGestureHandler>
-            </Animated.View>
-          </PanGestureHandler>
-        </Animated.View>
+        <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+          {Content}
+        </View>
       </TapGestureHandler>
     );
   }
