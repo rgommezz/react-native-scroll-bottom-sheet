@@ -14,7 +14,9 @@
     "react-native": "https://github.com/expo/react-native/archive/sdk-37.0.1.tar.gz",
     "react-native-screens": "~2.2.0",
     "react-native-scroll-bottom-sheet": "^0.1.1",
-    "react-native-web": "~0.11.7"
+    "react-native-web": "~0.11.7",
+    "react-native-gesture-handler": "~1.6.0",
+    "react-native-reanimated": "~1.7.0"
   },
   "devDependencies": {
     "@babel/core": "^7.8.6",
