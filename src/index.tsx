@@ -219,11 +219,22 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const didHandleGestureBegin = eq(handleGestureState, GestureState.ACTIVE);
 
-    const scrollY = cond(
-      didHandleGestureBegin,
-      [set(dragWithHandle, 1), 0],
-      cond(eq(dragWithHandle, 1), 0, lastStartScrollY)
-    );
+    const scrollY = [
+      cond(didHandleGestureBegin, [set(dragWithHandle, 1), 0]),
+      cond(
+        and(
+          eq(dragWithHandle, 1),
+          greaterThan(snapPoints[0], sub(lastSnap, abs(dragY))),
+          not(eq(lastSnap, snapPoints[0]))
+        ),
+        [
+          set(lastSnap, snapPoints[0]),
+          set(dragWithHandle, 0),
+          lastStartScrollY,
+        ],
+        cond(eq(dragWithHandle, 1), 0, lastStartScrollY)
+      ),
+    ];
 
     const isAnimationInterrupted = and(
       or(
@@ -355,6 +366,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         set(prevTranslateYOffset, animationPosition),
         set(animationFinished, 1),
         stopClock(animationClock),
+        set(lastSnap, animationPosition),
         animationPosition,
       ]),
       cond(
