@@ -73,7 +73,6 @@ interface TimingParams {
   clock: Animated.Clock;
   from: Animated.Node<number>;
   to: Animated.Node<number>;
-  duration: number;
   position: Animated.Value<number>;
   finished: Animated.Value<number>;
   frameTime: Animated.Value<number>;
@@ -104,6 +103,13 @@ type CommonProps = {
    * 1 => fully opened
    */
   animatedPosition?: Animated.Value<number>;
+  /**
+   * Configuration for the timing reanimated function
+   */
+  animationConfig?: {
+    duration: number;
+    easing: Animated.EasingFunction;
+  };
   /**
    * This value is useful if you want to take into consideration safe area insets
    * when applying percentages for snapping points. We recommend using react-native-safe-area-context
@@ -154,13 +160,17 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
   constructor(props: Props<T>) {
     super(props);
+    const {
+      initialSnapIndex,
+      animationConfig = { duration: 250, easing: Easing.inOut(Easing.ease) },
+    } = props;
     const ScrollComponent = this.getScrollComponent();
     // @ts-ignore
     this.scrollComponent = Animated.createAnimatedComponent(ScrollComponent);
     const snapPoints = this.getNormalisedSnapPoints();
     const openPosition = snapPoints[0];
     const closedPosition = snapPoints[snapPoints.length - 1];
-    const initialSnap = snapPoints[props.initialSnapIndex];
+    const initialSnap = snapPoints[initialSnapIndex];
     const tempDestSnapPoint = new Value(0);
     const isAndroid = new Value(Number(Platform.OS === 'android'));
     const initialDecelerationRate = Platform.select({
@@ -243,6 +253,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const scrollY = [
       cond(didHandleGestureBegin, [set(dragWithHandle, 1), 0]),
       cond(
+        // This is to account for a continuous scroll on the drawer from a snap point
+        // Different than top, bringing the drawer to the top position, so that if we
+        // change scroll direction without releasing the gesture, it doesn't pull down the drawer again
         and(
           eq(dragWithHandle, 1),
           greaterThan(snapPoints[0], sub(lastSnap, abs(dragY))),
@@ -278,7 +291,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       multiply(DRAG_TOSS, velocityY)
     );
 
-    const currentSnapPoint = (i = 0): Animated.Node<number> | number =>
+    const calculateNextSnapPoint = (i = 0): Animated.Node<number> | number =>
       i === snapPoints.length
         ? tempDestSnapPoint
         : cond(
@@ -288,16 +301,15 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             ),
             [
               set(tempDestSnapPoint, add(snapPoints[i], extraOffset)),
-              currentSnapPoint(i + 1),
+              calculateNextSnapPoint(i + 1),
             ],
-            currentSnapPoint(i + 1)
+            calculateNextSnapPoint(i + 1)
           );
 
     const runTiming = ({
       clock,
       from,
       to,
-      duration,
       position,
       finished,
       frameTime,
@@ -310,14 +322,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       };
 
       const config = {
-        duration,
         toValue: new Value(0),
-        easing: Easing.inOut(Easing.ease),
+        ...animationConfig,
       };
 
       return [
         cond(and(not(clockRunning(clock)), not(eq(finished, 1))), [
-          // If the clock isn't running we reset all the animation params and start the clock
+          // If the clock isn't running, we reset all the animation params and start the clock
           set(state.finished, 0),
           set(state.time, 0),
           set(state.position, from),
@@ -368,7 +379,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       cond(isAnimationInterrupted, [
         set(prevTranslateYOffset, animationPosition),
         set(animationFinished, 1),
-        set(animationFrameTime, 2000),
+        // By forcing that frameTime exceeds duration, it has the effect of stopping the animation
+        set(animationFrameTime, add(animationConfig.duration, 1000)),
         stopClock(animationClock),
         set(lastSnap, animationPosition),
         animationPosition,
@@ -379,7 +391,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           didScrollUpAndPullDown,
           setTranslationY,
           set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
-          set(destSnapPoint, currentSnapPoint()),
+          set(destSnapPoint, calculateNextSnapPoint()),
           set(dragY, 0),
           set(
             lastSnap,
@@ -398,7 +410,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           runTiming({
             clock: animationClock,
             from: add(prevTranslateYOffset, translationY),
-            duration: 250,
             to: destSnapPoint,
             position: animationPosition,
             finished: animationFinished,
