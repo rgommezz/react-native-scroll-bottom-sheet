@@ -74,6 +74,8 @@ interface TimingParams {
   from: Animated.Node<number>;
   to: Animated.Node<number>;
   duration: number;
+  position: Animated.Value<number>;
+  finished: Animated.Value<number>;
 }
 
 type CommonProps = {
@@ -169,6 +171,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     this.decelerationRate = new Value(initialDecelerationRate);
 
     const animationClock = new Clock();
+    const animationPosition = new Value(0);
+    const animationFinished = new Value(0);
     const dragY = new Value(0);
     const prevTranslateYOffset = new Value(initialSnap);
     const handleGestureState = new Value<GestureState>(-1);
@@ -222,6 +226,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       cond(eq(dragWithHandle, 1), 0, lastStartScrollY)
     );
 
+    const isAnimationInterrupted = and(
+      or(
+        eq(handleGestureState, GestureState.BEGAN),
+        eq(drawerGestureState, GestureState.BEGAN)
+      ),
+      clockRunning(animationClock)
+    );
+
     const didGestureFinish = or(
       and(
         eq(handleOldGestureState, GestureState.ACTIVE),
@@ -273,10 +285,17 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             currentSnapPoint(i + 1)
           );
 
-    const runTiming = ({ clock, from, to, duration = 400 }: TimingParams) => {
+    const runTiming = ({
+      clock,
+      from,
+      to,
+      duration,
+      position,
+      finished,
+    }: TimingParams) => {
       const state = {
-        finished: new Value<0 | 1>(0),
-        position: new Value(0),
+        finished,
+        position,
         time: new Value(0),
         frameTime: new Value(0),
       };
@@ -288,7 +307,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       };
 
       return [
-        cond(clockRunning(clock), 0, [
+        cond(not(clockRunning(clock)), [
           // If the clock isn't running we reset all the animation params and start the clock
           set(state.finished, 0),
           set(state.time, 0),
@@ -346,37 +365,51 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       ];
     };
 
-    const translateYOffset = cond(
-      didGestureFinish,
-      [
-        didScrollUpAndPullDown,
-        setTranslationY,
-        set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
-        set(destSnapPoint, currentSnapPoint()),
-        set(dragY, 0),
-        set(
-          lastSnap,
-          sub(
-            destSnapPoint,
-            cond(eq(scrollUpAndPullDown, 1), lastStartScrollY, 0)
-          )
-        ),
-        call([lastSnap], ([value]) => {
-          // This is the TapGHandler trick
+    const translateYOffset = [
+      cond(isAnimationInterrupted, [
+        set(prevTranslateYOffset, animationPosition),
+        set(animationFinished, 1),
+        stopClock(animationClock),
+        animationPosition,
+      ]),
+      cond(
+        didGestureFinish,
+        [
+          didScrollUpAndPullDown,
+          setTranslationY,
+          set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
+          set(destSnapPoint, currentSnapPoint()),
+          set(dragY, 0),
+          set(
+            lastSnap,
+            sub(
+              destSnapPoint,
+              cond(eq(scrollUpAndPullDown, 1), lastStartScrollY, 0)
+            )
+          ),
+          call([lastSnap], ([value]) => {
+            // This is the TapGHandler trick
+            // @ts-ignore
+            this.masterDrawer?.current?.setNativeProps({
+              maxDeltaY: value - this.getNormalisedSnapPoints()[0],
+            });
+          }),
+          runTiming({
+            clock: animationClock,
+            from: add(prevTranslateYOffset, translationY),
+            duration: 250,
+            to: destSnapPoint,
+            position: animationPosition,
+            finished: animationFinished,
+          }),
+        ],
+        [
+          set(animationFinished, 0),
           // @ts-ignore
-          this.masterDrawer?.current?.setNativeProps({
-            maxDeltaY: value - this.getNormalisedSnapPoints()[0],
-          });
-        }),
-        runTiming({
-          clock: animationClock,
-          from: add(prevTranslateYOffset, translationY),
-          duration: 250,
-          to: destSnapPoint,
-        }),
-      ],
-      prevTranslateYOffset
-    );
+          prevTranslateYOffset,
+        ]
+      ),
+    ];
 
     this.translateY = interpolate(
       add(translateYOffset, dragY, multiply(scrollY, -1)),
