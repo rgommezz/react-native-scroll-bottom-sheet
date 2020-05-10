@@ -76,6 +76,7 @@ interface TimingParams {
   duration: number;
   position: Animated.Value<number>;
   finished: Animated.Value<number>;
+  frameTime: Animated.Value<number>;
 }
 
 type CommonProps = {
@@ -173,6 +174,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const animationClock = new Clock();
     const animationPosition = new Value(0);
     const animationFinished = new Value(0);
+    const animationFrameTime = new Value(0);
     const dragY = new Value(0);
     const prevTranslateYOffset = new Value(initialSnap);
     const handleGestureState = new Value<GestureState>(-1);
@@ -219,23 +221,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const didHandleGestureBegin = eq(handleGestureState, GestureState.ACTIVE);
 
-    const scrollY = [
-      cond(didHandleGestureBegin, [set(dragWithHandle, 1), 0]),
-      cond(
-        and(
-          eq(dragWithHandle, 1),
-          greaterThan(snapPoints[0], sub(lastSnap, abs(dragY))),
-          not(eq(lastSnap, snapPoints[0]))
-        ),
-        [
-          set(lastSnap, snapPoints[0]),
-          set(dragWithHandle, 0),
-          lastStartScrollY,
-        ],
-        cond(eq(dragWithHandle, 1), 0, lastStartScrollY)
-      ),
-    ];
-
     const isAnimationInterrupted = and(
       or(
         eq(handleGestureState, GestureState.BEGAN),
@@ -254,6 +239,23 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         eq(drawerGestureState, GestureState.END)
       )
     );
+
+    const scrollY = [
+      cond(didHandleGestureBegin, [set(dragWithHandle, 1), 0]),
+      cond(
+        and(
+          eq(dragWithHandle, 1),
+          greaterThan(snapPoints[0], sub(lastSnap, abs(dragY))),
+          not(eq(lastSnap, snapPoints[0]))
+        ),
+        [
+          set(lastSnap, snapPoints[0]),
+          set(dragWithHandle, 0),
+          lastStartScrollY,
+        ],
+        cond(eq(dragWithHandle, 1), 0, lastStartScrollY)
+      ),
+    ];
 
     const didScrollUpAndPullDown = cond(
       and(
@@ -298,12 +300,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       duration,
       position,
       finished,
+      frameTime,
     }: TimingParams) => {
       const state = {
         finished,
         position,
         time: new Value(0),
-        frameTime: new Value(0),
+        frameTime,
       };
 
       const config = {
@@ -313,7 +316,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       };
 
       return [
-        cond(not(clockRunning(clock)), [
+        cond(and(not(clockRunning(clock)), not(eq(finished, 1))), [
           // If the clock isn't running we reset all the animation params and start the clock
           set(state.finished, 0),
           set(state.time, 0),
@@ -365,6 +368,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       cond(isAnimationInterrupted, [
         set(prevTranslateYOffset, animationPosition),
         set(animationFinished, 1),
+        set(animationFrameTime, 2000),
         stopClock(animationClock),
         set(lastSnap, animationPosition),
         animationPosition,
@@ -398,9 +402,11 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             to: destSnapPoint,
             position: animationPosition,
             finished: animationFinished,
+            frameTime: animationFrameTime,
           }),
         ],
         [
+          set(animationFrameTime, 0),
           set(animationFinished, 0),
           // @ts-ignore
           prevTranslateYOffset,
