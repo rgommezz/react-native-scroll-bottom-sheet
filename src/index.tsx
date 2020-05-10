@@ -188,7 +188,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const lastSnap = new Value(initialSnap);
     const dragWithHandle = new Value(0);
     const scrollUpAndPullDown = new Value(0);
-    const snapToDifferentThanTopWithHandle = new Value(0);
 
     this.onHandleGestureEvent = event([
       {
@@ -254,11 +253,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     );
 
     const setTranslationY = cond(
-      and(
-        not(dragWithHandle),
-        not(snapToDifferentThanTopWithHandle),
-        not(greaterOrEq(dragY, lastStartScrollY))
-      ),
+      and(not(dragWithHandle), not(greaterOrEq(dragY, lastStartScrollY))),
       set(translationY, sub(dragY, lastStartScrollY)),
       set(translationY, dragY)
     );
@@ -345,17 +340,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               set(lastStartScrollY, 0),
               set(scrollUpAndPullDown, 0),
             ]),
-            cond(
-              and(eq(dragWithHandle, 1), not(eq(destSnapPoint, snapPoints[0]))),
-              set(snapToDifferentThanTopWithHandle, 1)
-            ),
-            cond(
-              and(
-                eq(snapToDifferentThanTopWithHandle, 1),
-                eq(destSnapPoint, snapPoints[0])
-              ),
-              [set(snapToDifferentThanTopWithHandle, 0), set(dragWithHandle, 0)]
-            ),
+            cond(eq(destSnapPoint, snapPoints[0]), [set(dragWithHandle, 0)]),
             stopClock(clock),
             prevTranslateYOffset,
           ],
