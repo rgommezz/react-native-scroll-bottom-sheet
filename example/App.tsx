@@ -41,6 +41,9 @@ export default function App() {
         animatedPosition={animatedPosition.current}
         snapPoints={snapPointsFromTop}
         initialSnapIndex={2}
+        onSettle={index => {
+          console.log('Next snap index: ', index);
+        }}
         renderHandle={() => (
           <View style={styles.headerContainer}>
             <View style={styles.header}>

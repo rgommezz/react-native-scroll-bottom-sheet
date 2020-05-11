@@ -151,6 +151,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
    * Animated value that keeps track of the position: 0 => closed, 1 => opened
    */
   private position: Animated.Node<number>;
+  private nextSnapIndex: Animated.Value<number>;
   private decelerationRate: Animated.Value<number>;
 
   private scrollComponent: React.ComponentType<
@@ -174,6 +175,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const closedPosition = snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
     const tempDestSnapPoint = new Value(0);
+    this.nextSnapIndex = new Value(initialSnapIndex);
     const isAndroid = new Value(Number(Platform.OS === 'android'));
     const initialDecelerationRate = Platform.select({
       android:
@@ -302,6 +304,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             ),
             [
               set(tempDestSnapPoint, add(snapPoints[i], extraOffset)),
+              set(this.nextSnapIndex, i),
               calculateNextSnapPoint(i + 1),
             ],
             calculateNextSnapPoint(i + 1)
@@ -342,7 +345,13 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         cond(
           state.finished,
           [
-            // Resetting appropriate values
+            onChange(
+              this.nextSnapIndex,
+              call([this.nextSnapIndex], ([value]) => {
+                this.props.onSettle?.(value);
+              })
+            ),
+            // Resetting appropriate valuesc
             set(drawerOldGestureState, GestureState.END),
             set(handleOldGestureState, GestureState.END),
             set(prevTranslateYOffset, state.position),
@@ -380,8 +389,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           didScrollUpAndPullDown,
           setTranslationY,
           set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
+          set(this.nextSnapIndex, 0),
           set(destSnapPoint, calculateNextSnapPoint()),
           set(dragY, 0),
+          set(velocityY, 0),
           set(
             lastSnap,
             sub(
