@@ -153,6 +153,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   private position: Animated.Node<number>;
   private nextSnapIndex: Animated.Value<number>;
   private decelerationRate: Animated.Value<number>;
+  private prevSnapIndex = -1;
 
   private scrollComponent: React.ComponentType<
     FlatListProps<T> | ScrollViewProps | SectionListProps<T>
@@ -345,12 +346,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         cond(
           state.finished,
           [
-            onChange(
-              this.nextSnapIndex,
-              call([this.nextSnapIndex], ([value]) => {
+            call([this.nextSnapIndex], ([value]) => {
+              if (value !== this.prevSnapIndex) {
                 this.props.onSettle?.(value);
-              })
-            ),
+              }
+              this.prevSnapIndex = value;
+            }),
             // Resetting appropriate valuesc
             set(drawerOldGestureState, GestureState.END),
             set(handleOldGestureState, GestureState.END),
