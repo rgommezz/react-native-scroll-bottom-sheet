@@ -27,6 +27,7 @@ import Animated, {
   interpolate,
   multiply,
   not,
+  onChange,
   or,
   set,
   startClock,
@@ -34,7 +35,6 @@ import Animated, {
   sub,
   timing,
   Value,
-  onChange,
 } from 'react-native-reanimated';
 import {
   NativeViewGestureHandler,
@@ -345,18 +345,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             // Resetting appropriate values
             set(drawerOldGestureState, GestureState.END),
             set(handleOldGestureState, GestureState.END),
-            set(
-              this.decelerationRate,
-              cond(
-                eq(isAndroid, 1),
-                cond(
-                  eq(lastSnap, snapPoints[0]),
-                  ANDROID_NORMAL_DECELERATION_RATE,
-                  0
-                ),
-                IOS_NORMAL_DECELERATION_RATE
-              )
-            ),
             set(prevTranslateYOffset, state.position),
             cond(eq(scrollUpAndPullDown, 1), [
               set(
@@ -408,6 +396,18 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               maxDeltaY: value - this.getNormalisedSnapPoints()[0],
             });
           }),
+          set(
+            this.decelerationRate,
+            cond(
+              eq(isAndroid, 1),
+              cond(
+                eq(lastSnap, snapPoints[0]),
+                ANDROID_NORMAL_DECELERATION_RATE,
+                0
+              ),
+              IOS_NORMAL_DECELERATION_RATE
+            )
+          ),
           runTiming({
             clock: animationClock,
             from: add(prevTranslateYOffset, translationY),
