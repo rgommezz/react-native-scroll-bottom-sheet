@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, Button } from 'react-native';
 import Animated, {
   Value,
   interpolate,
@@ -7,10 +7,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import ScrollBottomSheet from 'react-native-scroll-bottom-sheet';
 
-const windowHeight = Dimensions.get('window').height;
-const snapPointsFromTop = [128, '50%', windowHeight - 200];
-
 export default function App() {
+  const windowHeight = Dimensions.get('window').height;
+  const snapPointsFromTop = [128, '50%', windowHeight - 200];
+  const bottomSheetRef = React.useRef<ScrollBottomSheet<any> | null>(null);
+
   const renderItem = React.useCallback(
     ({ item }) => (
       <View style={styles.item}>
@@ -36,6 +37,7 @@ export default function App() {
         ]}
       />
       <ScrollBottomSheet<string>
+        ref={bottomSheetRef}
         componentType="FlatList"
         topInset={24}
         animatedPosition={animatedPosition.current}
@@ -56,6 +58,37 @@ export default function App() {
         keyExtractor={i => i}
         renderItem={renderItem}
       />
+      <View style={[StyleSheet.absoluteFillObject]}>
+        <View
+          style={{
+            width: '100%',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: 24,
+            padding: 32,
+          }}
+        >
+          <Button
+            title="snapTo 0"
+            onPress={() => {
+              bottomSheetRef.current?.snapTo(0);
+            }}
+          />
+          <Button
+            title="snapTo 1"
+            onPress={() => {
+              bottomSheetRef.current?.snapTo(1);
+            }}
+          />
+          <Button
+            title="snapTo 2"
+            onPress={() => {
+              bottomSheetRef.current?.snapTo(2);
+            }}
+          />
+        </View>
+      </View>
     </View>
   );
 }
