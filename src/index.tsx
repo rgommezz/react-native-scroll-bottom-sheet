@@ -151,6 +151,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
    * Animated value that keeps track of the position: 0 => closed, 1 => opened
    */
   private position: Animated.Node<number>;
+  private isManuallySetValue: Animated.Value<number> = new Value(0);
+  private manualYOffset: Animated.Value<number> = new Value(0);
   private nextSnapIndex: Animated.Value<number>;
   private decelerationRate: Animated.Value<number>;
   private prevSnapIndex = -1;
@@ -255,7 +257,16 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     );
 
     const scrollY = [
-      cond(didHandleGestureBegin, [set(dragWithHandle, 1), 0]),
+      cond(
+        or(
+          didHandleGestureBegin,
+          and(
+            this.isManuallySetValue,
+            not(eq(this.manualYOffset, snapPoints[0]))
+          )
+        ),
+        [set(dragWithHandle, 1), 0]
+      ),
       cond(
         // This is to account for a continuous scroll on the drawer from a snap point
         // Different than top, bringing the drawer to the top position, so that if we
@@ -352,7 +363,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               }
               this.prevSnapIndex = value;
             }),
-            // Resetting appropriate valuesc
+            // Resetting appropriate values
             set(drawerOldGestureState, GestureState.END),
             set(handleOldGestureState, GestureState.END),
             set(prevTranslateYOffset, state.position),
@@ -365,6 +376,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               set(scrollUpAndPullDown, 0),
             ]),
             cond(eq(destSnapPoint, snapPoints[0]), [set(dragWithHandle, 0)]),
+            set(this.isManuallySetValue, 0),
+            set(this.manualYOffset, 0),
             stopClock(clock),
             prevTranslateYOffset,
           ],
@@ -385,16 +398,33 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         animationPosition,
       ]),
       cond(
-        didGestureFinish,
+        or(
+          didGestureFinish,
+          this.isManuallySetValue,
+          clockRunning(animationClock)
+        ),
         [
           didScrollUpAndPullDown,
           setTranslationY,
           set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
           set(this.nextSnapIndex, 0),
-          set(destSnapPoint, calculateNextSnapPoint()),
+          set(
+            destSnapPoint,
+            cond(
+              this.isManuallySetValue,
+              this.manualYOffset,
+              calculateNextSnapPoint()
+            )
+          ),
           set(dragY, 0),
           set(velocityY, 0),
-          set(lastSnap, destSnapPoint),
+          set(
+            lastSnap,
+            sub(
+              destSnapPoint,
+              cond(eq(scrollUpAndPullDown, 1), lastStartScrollY, 0)
+            )
+          ),
           call([lastSnap], ([value]) => {
             // This is the TapGHandler trick
             // @ts-ignore
@@ -414,9 +444,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               IOS_NORMAL_DECELERATION_RATE
             )
           ),
+          cond(this.isManuallySetValue, [set(animationFinished, 0)]),
           runTiming({
             clock: animationClock,
-            from: add(prevTranslateYOffset, translationY),
+            from: cond(
+              this.isManuallySetValue,
+              prevTranslateYOffset,
+              add(prevTranslateYOffset, translationY)
+            ),
             to: destSnapPoint,
             position: animationPosition,
             finished: animationFinished,
@@ -448,7 +483,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     });
   }
 
-  getNormalisedSnapPoints = () => {
+  private getNormalisedSnapPoints = () => {
     return this.props.snapPoints.map(p => {
       if (typeof p === 'string') {
         return this.convertPercentageToDp(p);
@@ -462,7 +497,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     });
   };
 
-  getScrollComponent = () => {
+  private getScrollComponent = () => {
     switch (this.props.componentType) {
       case 'FlatList':
         return FlatList;
@@ -475,6 +510,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           'Component type not supported: it should be one of `FlatList`, `ScrollView` or `SectionList`'
         );
     }
+  };
+
+  snapTo = (index: number) => {
+    const snapPoints = this.getNormalisedSnapPoints();
+    this.isManuallySetValue.setValue(1);
+    this.manualYOffset.setValue(snapPoints[index]);
   };
 
   render() {
