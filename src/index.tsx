@@ -394,13 +394,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           set(destSnapPoint, calculateNextSnapPoint()),
           set(dragY, 0),
           set(velocityY, 0),
-          set(
-            lastSnap,
-            sub(
-              destSnapPoint,
-              cond(eq(scrollUpAndPullDown, 1), lastStartScrollY, 0)
-            )
-          ),
+          set(lastSnap, destSnapPoint),
           call([lastSnap], ([value]) => {
             // This is the TapGHandler trick
             // @ts-ignore
