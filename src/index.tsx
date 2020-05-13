@@ -416,6 +416,20 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               calculateNextSnapPoint()
             )
           ),
+          cond(
+            and(greaterThan(dragY, lastStartScrollY), isAndroid),
+            call([], () => {
+              // This prevents the scroll glide from happening on Android when pulling down with inertia.
+              // It's not perfect, but does the job for now
+              // @ts-ignore
+              this.contentComponentRef.current?._component.scrollToIndex({
+                index: 0,
+                animated: true,
+                viewPosition: 0,
+                viewOffset: 1000,
+              });
+            })
+          ),
           set(dragY, 0),
           set(velocityY, 0),
           set(
