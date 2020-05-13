@@ -54,6 +54,35 @@ const { height: windowHeight } = Dimensions.get('window');
 const DRAG_TOSS = 0.05;
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
+const imperativeScrollOptions = {
+  [FlatListComponentType]: {
+    method: 'scrollToIndex',
+    args: {
+      index: 0,
+      viewPosition: 0,
+      viewOffset: 1000,
+      animated: true,
+    },
+  },
+  [ScrollViewComponentType]: {
+    method: 'scrollTo',
+    args: {
+      x: 0,
+      y: 0,
+      animated: true,
+    },
+  },
+  [SectionListComponentType]: {
+    method: 'scrollToLocation',
+    args: {
+      itemIndex: 0,
+      sectionIndex: 0,
+      viewPosition: 0,
+      viewOffset: 1000,
+      animated: true,
+    },
+  },
+};
 
 type AnimatedScrollableComponent = FlatList | ScrollView | SectionList;
 
@@ -421,13 +450,11 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             call([], () => {
               // This prevents the scroll glide from happening on Android when pulling down with inertia.
               // It's not perfect, but does the job for now
+              const { method, args } = imperativeScrollOptions[
+                this.props.componentType
+              ];
               // @ts-ignore
-              this.contentComponentRef.current?._component.scrollToIndex({
-                index: 0,
-                animated: true,
-                viewPosition: 0,
-                viewOffset: 1000,
-              });
+              this.contentComponentRef.current?._component[method](args);
             })
           ),
           set(dragY, 0),
