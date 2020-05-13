@@ -24,9 +24,9 @@ import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import ScrollBottomSheet from 'react-native-scroll-bottom-sheet';
 
-function Example() {
-  const windowHeight = Dimensions.get('window').height;
+const windowHeight = Dimensions.get('window').height;
 
+function Example() {
   return (
     <View style={styles.container}>
       <ScrollBottomSheet<string> // If you are using TS, that'll infer the renderItem `item` type
@@ -101,13 +101,13 @@ This is the list of exclusive props that are meant to be used to customise the b
 | Name                      | Required | Type | Description |
 | ------------------------- | -------- | ------- | ------------|
 | componentType             | yes      | `string `       | 'FlatList', 'ScrollView', or 'SectionList' |
-| snapPoints                | yes      | `Array<string \| number>`       | Array of numbers that indicate the different resting positions of the bottom sheet (in dp or %), starting from the top. If a percentage is used, that would translate to the relative amount of the total window height. For instance, if 50% is used, that'd be `windowHeight * 0.5`. If you wanna take into account safe areas during the calculation, such as status bars and notches, please use it in combination with `topInset` prop |
-| initialSnapIndex          | yes       | `number`       | Index that references the initial resting position of the drawer, starting from the top |
+| snapPoints                | yes      | `Array<string \| number>`       | Array of numbers and/or percentages that indicate the different resting positions of the bottom sheet (in dp or %), **starting from the top**. If a percentage is used, that would translate to the relative amount of the total window height. If you want that percentage to be calculated based on the parent available space instead, for example to account for safe areas or navigation bars, use it in combination with `topInset` prop |
+| initialSnapIndex          | yes       | `number`       | Index that references the initial resting position of the drawer, **starting from the top** |
 | renderHandle              | yes      |  `() => React.ReactNode`      | Render prop for the handle, should return a React Element |
 | onSettle                  | no       |  `(index: number) => void`       | Callback that is executed right after the bottom sheet settles in one of the snapping points. The new index is provided on the callback |
 | animatedPosition          | no       |  `Animated.Value<number>`       | Animated value that tracks the position of the drawer, being: 0 => closed, 1 => fully opened |
 | animationConfig           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 250ms and easing fn `Easing.inOut(Easing.ease)`  |
-| topInset                  | no       | `number`  | This value is useful if you want to take into consideration safe area insets when applying percentages for snapping points. We recommend using [react-native-safe-area-context](https://github.com/th3rdwave/react-native-safe-area-context#usage) for that. Look at `insets.top` |
+| topInset                  | no       | `number`  | This value is useful to provide an offset (in dp) when applying percentages for snapping points |
 
 ### Inherited
 Depending on the value of `componentType` chosen, the bottom sheet component will inherit its underlying props, being one of 
