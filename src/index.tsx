@@ -407,7 +407,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           didScrollUpAndPullDown,
           setTranslationY,
           set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
-          set(this.nextSnapIndex, 0),
+          cond(not(this.isManuallySetValue), set(this.nextSnapIndex, 0)),
           set(
             destSnapPoint,
             cond(
@@ -516,6 +516,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const snapPoints = this.getNormalisedSnapPoints();
     this.isManuallySetValue.setValue(1);
     this.manualYOffset.setValue(snapPoints[index]);
+    this.nextSnapIndex.setValue(index);
   };
 
   render() {
