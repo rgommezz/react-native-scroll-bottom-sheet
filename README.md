@@ -19,7 +19,7 @@ yarn add react-native-scroll-bottom-sheet
 
 The below is an example using the core `FlatList` from React Native as the scrollable component.
 
-```js
+```typescript
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import ScrollBottomSheet from 'react-native-scroll-bottom-sheet';
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
 There are 2 types of props this component receives: explicit and inherited.
 
 ### Explicit
-This is the list of exclusive props the component receives, in order to customise its behaviour.
+This is the list of exclusive props that are meant to be used to customise the bottom sheet behaviour.
 
 
 | name                      | required | type | description |
@@ -111,7 +111,7 @@ This is the list of exclusive props the component receives, in order to customis
 
 ### Inherited
 Depending on the value of `componentType` chosen, the bottom sheet component will inherit its underlying props, being one of 
-[FlatListProps](https://reactnative.dev/docs/flatlist#props), [ScrollViewProps](https://reactnative.dev/docs/scrollview#props) or [SectionListProps](https://reactnative.dev/docs/sectionlist#props)
+[FlatListProps](https://reactnative.dev/docs/flatlist#props), [ScrollViewProps](https://reactnative.dev/docs/scrollview#props) or [SectionListProps](https://reactnative.dev/docs/sectionlist#props), so that you can tailor the scrollable content behaviour as per your needs.
 
 ## Methods
 
