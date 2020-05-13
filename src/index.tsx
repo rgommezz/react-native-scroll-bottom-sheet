@@ -471,7 +471,11 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             )
           ),
           cond(
-            and(greaterThan(dragY, lastStartScrollY), isAndroid),
+            and(
+              greaterThan(dragY, lastStartScrollY),
+              isAndroid,
+              not(dragWithHandle)
+            ),
             call([], () => {
               // This prevents the scroll glide from happening on Android when pulling down with inertia.
               // It's not perfect, but does the job for now
