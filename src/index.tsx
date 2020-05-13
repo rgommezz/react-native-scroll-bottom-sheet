@@ -8,6 +8,7 @@ import {
   SectionList,
   SectionListProps,
   StyleSheet,
+  ScrollView,
   View,
 } from 'react-native';
 import Animated, {
@@ -40,7 +41,6 @@ import {
   NativeViewGestureHandler,
   PanGestureHandler,
   PanGestureHandlerProperties,
-  ScrollView,
   State as GestureState,
   TapGestureHandler,
 } from 'react-native-gesture-handler';
@@ -111,10 +111,13 @@ interface TimingParams {
 type CommonProps = {
   /**
    * Array of numbers that indicate the different resting positions of the bottom sheet (in dp or %), starting from the top.
+   * If a percentage is used, that would translate to the relative amount of the total window height.
+   * For instance, if 50% is used, that'd be windowHeight * 0.5. If you wanna take into account safe areas during
+   * the calculation, such as status bars and notches, please use 'topInset' prop
    */
   snapPoints: Array<string | number>;
   /**
-   * Index that references the initial settled position of the drawer
+   * Index that references the initial resting position of the drawer, starting from the top
    */
   initialSnapIndex: number;
   /**
@@ -159,17 +162,22 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   /**
    * Gesture Handler references
    */
+  private masterDrawer = React.createRef<TapGestureHandler>();
   private drawerHandleRef = React.createRef<PanGestureHandler>();
   private drawerContentRef = React.createRef<PanGestureHandler>();
   private scrollComponentRef = React.createRef<NativeViewGestureHandler>();
-
-  private masterDrawer = React.createRef<TapGestureHandler>();
 
   /**
    * Reference to FlatList, ScrollView or SectionList in order to execute its imperative methods.
    */
   private contentComponentRef = React.createRef<AnimatedScrollableComponent>();
+  /**
+   * ScrollView prop
+   */
   private onScrollBeginDrag: ScrollViewProps['onScrollBeginDrag'];
+  /**
+   * Pan gesture handler events for drawer handle and content
+   */
   private onHandleGestureEvent: PanGestureHandlerProperties['onGestureEvent'];
   private onDrawerGestureEvent: PanGestureHandlerProperties['onGestureEvent'];
   /**
@@ -180,9 +188,22 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
    * Animated value that keeps track of the position: 0 => closed, 1 => opened
    */
   private position: Animated.Node<number>;
+  /**
+   * Flag to indicate imperative snapping
+   */
   private isManuallySetValue: Animated.Value<number> = new Value(0);
+  /**
+   * Manual snapping amount
+   */
   private manualYOffset: Animated.Value<number> = new Value(0);
+  /**
+   * Keeps track of the current index
+   */
   private nextSnapIndex: Animated.Value<number>;
+  /**
+   * Deceleration rate of the scroll component. This is used only on Android to
+   * compensate the unexpected glide it gets sometimes.
+   */
   private decelerationRate: Animated.Value<number>;
   private prevSnapIndex = -1;
 
@@ -199,36 +220,40 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       initialSnapIndex,
       animationConfig = { duration: 250, easing: Easing.inOut(Easing.ease) },
     } = props;
+
     const ScrollComponent = this.getScrollComponent();
     // @ts-ignore
     this.scrollComponent = Animated.createAnimatedComponent(ScrollComponent);
+
     const snapPoints = this.getNormalisedSnapPoints();
     const openPosition = snapPoints[0];
     const closedPosition = snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
     const tempDestSnapPoint = new Value(0);
     this.nextSnapIndex = new Value(initialSnapIndex);
+
     const isAndroid = new Value(Number(Platform.OS === 'android'));
     const initialDecelerationRate = Platform.select({
       android:
         props.initialSnapIndex === 0 ? ANDROID_NORMAL_DECELERATION_RATE : 0,
       ios: IOS_NORMAL_DECELERATION_RATE,
     });
-
     this.decelerationRate = new Value(initialDecelerationRate);
 
     const animationClock = new Clock();
     const animationPosition = new Value(0);
     const animationFinished = new Value(0);
     const animationFrameTime = new Value(0);
-    const dragY = new Value(0);
-    const prevTranslateYOffset = new Value(initialSnap);
+
     const handleGestureState = new Value<GestureState>(-1);
     const handleOldGestureState = new Value<GestureState>(-1);
     const drawerGestureState = new Value<GestureState>(-1);
     const drawerOldGestureState = new Value<GestureState>(-1);
+
+    const dragY = new Value(0);
     const velocityY = new Value(0);
     const lastStartScrollY = new Value(0);
+    const prevTranslateYOffset = new Value(initialSnap);
     const translationY = new Value(initialSnap);
     const destSnapPoint = new Value(0);
 
@@ -606,11 +631,11 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               simultaneousHandlers={this.drawerContentRef}
             >
               <AnimatedScrollableComponent
-                {...rest}
+                overScrollMode="never"
                 bounces={false}
+                {...rest}
                 // @ts-ignore
                 ref={this.contentComponentRef}
-                overScrollMode="never"
                 // @ts-ignore
                 decelerationRate={this.decelerationRate}
                 onScrollBeginDrag={this.onScrollBeginDrag}

@@ -1,5 +1,12 @@
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions, Button } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+  Button,
+  StatusBar,
+} from 'react-native';
 import Animated, {
   Value,
   interpolate,
@@ -30,10 +37,11 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="white" />
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
-          { backgroundColor: 'black', opacity },
+          { backgroundColor: 'black', opacity, justifyContent: 'center' },
         ]}
       />
       <ScrollBottomSheet<string>
@@ -47,10 +55,8 @@ export default function App() {
           console.log('Next snap index: ', index);
         }}
         renderHandle={() => (
-          <View style={styles.headerContainer}>
-            <View style={styles.header}>
-              <View style={styles.panelHandle} />
-            </View>
+          <View style={styles.header}>
+            <View style={styles.panelHandle} />
           </View>
         )}
         contentContainerStyle={styles.contentContainerStyle}
@@ -101,20 +107,10 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#F3F4F9',
   },
-  headerContainer: {
-    overflow: 'hidden',
-    paddingTop: 20,
-  },
   header: {
     alignItems: 'center',
-    backgroundColor: '#F3F4F9',
-    borderTopWidth: 0.5,
-    borderLeftWidth: 0.5,
-    borderRightWidth: 0.5,
+    backgroundColor: 'white',
     paddingTop: 20,
-    borderLeftColor: '#F3F4F9',
-    borderRightColor: '#F3F4F9',
-    borderTopColor: '#F3F4F9',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     shadowColor: '#000',
@@ -129,6 +125,7 @@ const styles = StyleSheet.create({
   panelHandle: {
     width: 40,
     height: 2,
+    backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 4,
     marginBottom: 10,
   },
