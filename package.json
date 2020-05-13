@@ -1,7 +1,7 @@
 {
   "name": "react-native-scroll-bottom-sheet",
-  "version": "0.1.1",
-  "description": "Cross platform scrollable bottom sheet with virtualisation support, running at 60 FPS and fully implemented in JS land",
+  "version": "0.4.0",
+  "description": "Cross platform scrollable bottom sheet with virtualization support, running at 60 FPS and fully implemented in JS land",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "types": "lib/typescript/index.d.ts",
@@ -38,7 +38,8 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-gesture-handler": "*"
+    "react-native-gesture-handler": "*",
+    "react-native-reanimated": "*"
   },
   "devDependencies": {
     "@commitlint/config-conventional": "^8.3.4",
@@ -58,6 +59,7 @@
     "react": "~16.9.0",
     "react-native": "^0.62.2",
     "react-native-gesture-handler": "^1.6.1",
+    "react-native-reanimated": "^1.8.0",
     "release-it": "^12.6.3",
     "typescript": "^3.7.5"
   },
