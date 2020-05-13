@@ -58,7 +58,7 @@ export default function App() {
         keyExtractor={i => i}
         renderItem={renderItem}
       />
-      <View style={[StyleSheet.absoluteFillObject]}>
+      <View style={[StyleSheet.absoluteFillObject]} pointerEvents="box-none">
         <View
           style={{
             width: '100%',
