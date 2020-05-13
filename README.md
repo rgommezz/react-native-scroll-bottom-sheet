@@ -19,7 +19,7 @@ yarn add react-native-scroll-bottom-sheet
 
 The below is an example using the core `FlatList` from React Native as the scrollable component.
 
-```typescript
+```tsx
 import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import ScrollBottomSheet from 'react-native-scroll-bottom-sheet';
@@ -98,7 +98,7 @@ There are 2 types of props this component receives: explicit and inherited.
 This is the list of exclusive props that are meant to be used to customise the bottom sheet behaviour.
 
 
-| name                      | required | type | description |
+| Name                      | Required | Type | Description |
 | ------------------------- | -------- | ------- | ------------|
 | componentType             | yes      | `string `       | 'FlatList', 'ScrollView', or 'SectionList' |
 | snapPoints                | yes      | `Array<string \| number>`       | Array of numbers that indicate the different resting positions of the bottom sheet (in dp or %), starting from the top. If a percentage is used, that would translate to the relative amount of the total window height. For instance, if 50% is used, that'd be `windowHeight * 0.5`. If you wanna take into account safe areas during the calculation, such as status bars and notches, please use it in combination with `topInset` prop |
@@ -115,7 +115,7 @@ Depending on the value of `componentType` chosen, the bottom sheet component wil
 
 ## Methods
 
-### `snapTo(index)`
+#### `snapTo(index)`
 
 Imperative method to snap to a specific index, i.e.
 
