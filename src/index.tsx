@@ -210,6 +210,28 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   private prevSnapIndex = -1;
   private dragY = new Value(0);
   private prevDragY = new Value(0);
+  private tempDestSnapPoint = new Value(0);
+  private isAndroid = new Value(Number(Platform.OS === 'android'));
+  private animationClock = new Clock();
+  private animationPosition = new Value(0);
+  private animationFinished = new Value(0);
+  private animationFrameTime = new Value(0);
+  private velocityY = new Value(0);
+  private lastStartScrollY: Animated.Value<number> = new Value(0);
+  private prevTranslateYOffset: Animated.Value<number>;
+  private translationY: Animated.Value<number>;
+  private destSnapPoint = new Value(0);
+
+  private lastSnap: Animated.Value<number>;
+  private dragWithHandle = new Value(0);
+  private scrollUpAndPullDown = new Value(0);
+  private didGestureFinish: Animated.Node<0 | 1>;
+  private didScrollUpAndPullDown: Animated.Node<number>;
+  private setTranslationY: Animated.Node<number>;
+  private extraOffset: Animated.Node<number>;
+  private calculateNextSnapPoint: (
+    i?: number
+  ) => number | Animated.Node<number>;
 
   private scrollComponent: React.ComponentType<
     FlatListProps<T> | ScrollViewProps | SectionListProps<T>
@@ -232,10 +254,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const openPosition = snapPoints[0];
     const closedPosition = snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
-    const tempDestSnapPoint = new Value(0);
     this.nextSnapIndex = new Value(initialSnapIndex);
 
-    const isAndroid = new Value(Number(Platform.OS === 'android'));
     const initialDecelerationRate = Platform.select({
       android:
         props.initialSnapIndex === 0 ? ANDROID_NORMAL_DECELERATION_RATE : 0,
@@ -243,25 +263,15 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     });
     this.decelerationRate = new Value(initialDecelerationRate);
 
-    const animationClock = new Clock();
-    const animationPosition = new Value(0);
-    const animationFinished = new Value(0);
-    const animationFrameTime = new Value(0);
-
     const handleGestureState = new Value<GestureState>(-1);
     const handleOldGestureState = new Value<GestureState>(-1);
     const drawerGestureState = new Value<GestureState>(-1);
     const drawerOldGestureState = new Value<GestureState>(-1);
 
-    const velocityY = new Value(0);
-    const lastStartScrollY = new Value(0);
-    const prevTranslateYOffset = new Value(initialSnap);
-    const translationY = new Value(initialSnap);
-    const destSnapPoint = new Value(0);
+    this.prevTranslateYOffset = new Value(initialSnap);
+    this.translationY = new Value(initialSnap);
 
-    const lastSnap = new Value(initialSnap);
-    const dragWithHandle = new Value(0);
-    const scrollUpAndPullDown = new Value(0);
+    this.lastSnap = new Value(initialSnap);
 
     this.onHandleGestureEvent = event([
       {
@@ -269,7 +279,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           translationY: this.dragY,
           oldState: handleOldGestureState,
           state: handleGestureState,
-          velocityY: velocityY,
+          velocityY: this.velocityY,
         },
       },
     ]);
@@ -279,14 +289,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           translationY: this.dragY,
           oldState: drawerOldGestureState,
           state: drawerGestureState,
-          velocityY: velocityY,
+          velocityY: this.velocityY,
         },
       },
     ]);
     this.onScrollBeginDrag = event([
       {
         nativeEvent: {
-          contentOffset: { y: lastStartScrollY },
+          contentOffset: { y: this.lastStartScrollY },
         },
       },
     ]);
@@ -298,10 +308,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         eq(handleGestureState, GestureState.BEGAN),
         eq(drawerGestureState, GestureState.BEGAN)
       ),
-      clockRunning(animationClock)
+      clockRunning(this.animationClock)
     );
 
-    const didGestureFinish = or(
+    this.didGestureFinish = or(
       and(
         eq(handleOldGestureState, GestureState.ACTIVE),
         eq(handleGestureState, GestureState.END)
@@ -321,61 +331,68 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             not(eq(this.manualYOffset, snapPoints[0]))
           )
         ),
-        [set(dragWithHandle, 1), 0]
+        [set(this.dragWithHandle, 1), 0]
       ),
       cond(
         // This is to account for a continuous scroll on the drawer from a snap point
         // Different than top, bringing the drawer to the top position, so that if we
         // change scroll direction without releasing the gesture, it doesn't pull down the drawer again
         and(
-          eq(dragWithHandle, 1),
-          greaterThan(snapPoints[0], sub(lastSnap, abs(this.dragY))),
-          not(eq(lastSnap, snapPoints[0]))
+          eq(this.dragWithHandle, 1),
+          greaterThan(snapPoints[0], sub(this.lastSnap, abs(this.dragY))),
+          not(eq(this.lastSnap, snapPoints[0]))
         ),
         [
-          set(lastSnap, snapPoints[0]),
-          set(dragWithHandle, 0),
-          lastStartScrollY,
+          set(this.lastSnap, snapPoints[0]),
+          set(this.dragWithHandle, 0),
+          this.lastStartScrollY,
         ],
-        cond(eq(dragWithHandle, 1), 0, lastStartScrollY)
+        cond(eq(this.dragWithHandle, 1), 0, this.lastStartScrollY)
       ),
     ];
 
-    const didScrollUpAndPullDown = cond(
+    this.didScrollUpAndPullDown = cond(
       and(
-        greaterOrEq(this.dragY, lastStartScrollY),
-        greaterThan(lastStartScrollY, 0)
+        greaterOrEq(this.dragY, this.lastStartScrollY),
+        greaterThan(this.lastStartScrollY, 0)
       ),
-      set(scrollUpAndPullDown, 1)
+      set(this.scrollUpAndPullDown, 1)
     );
 
-    const setTranslationY = cond(
-      and(not(dragWithHandle), not(greaterOrEq(this.dragY, lastStartScrollY))),
-      set(translationY, sub(this.dragY, lastStartScrollY)),
-      set(translationY, this.dragY)
+    this.setTranslationY = cond(
+      and(
+        not(this.dragWithHandle),
+        not(greaterOrEq(this.dragY, this.lastStartScrollY))
+      ),
+      set(this.translationY, sub(this.dragY, this.lastStartScrollY)),
+      set(this.translationY, this.dragY)
     );
 
-    const extraOffset = cond(eq(scrollUpAndPullDown, 1), lastStartScrollY, 0);
+    this.extraOffset = cond(
+      eq(this.scrollUpAndPullDown, 1),
+      this.lastStartScrollY,
+      0
+    );
     const endOffsetY = add(
-      lastSnap,
-      translationY,
-      multiply(DRAG_TOSS, velocityY)
+      this.lastSnap,
+      this.translationY,
+      multiply(DRAG_TOSS, this.velocityY)
     );
 
-    const calculateNextSnapPoint = (i = 0): Animated.Node<number> | number =>
+    this.calculateNextSnapPoint = (i = 0): Animated.Node<number> | number =>
       i === snapPoints.length
-        ? tempDestSnapPoint
+        ? this.tempDestSnapPoint
         : cond(
             greaterThan(
-              abs(sub(tempDestSnapPoint, endOffsetY)),
-              abs(sub(add(snapPoints[i], extraOffset), endOffsetY))
+              abs(sub(this.tempDestSnapPoint, endOffsetY)),
+              abs(sub(add(snapPoints[i], this.extraOffset), endOffsetY))
             ),
             [
-              set(tempDestSnapPoint, add(snapPoints[i], extraOffset)),
+              set(this.tempDestSnapPoint, add(snapPoints[i], this.extraOffset)),
               set(this.nextSnapIndex, i),
-              calculateNextSnapPoint(i + 1),
+              this.calculateNextSnapPoint(i + 1),
             ],
-            calculateNextSnapPoint(i + 1)
+            this.calculateNextSnapPoint(i + 1)
           );
 
     const runTiming = ({
@@ -427,20 +444,22 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             // Resetting appropriate values
             set(drawerOldGestureState, GestureState.END),
             set(handleOldGestureState, GestureState.END),
-            set(prevTranslateYOffset, state.position),
-            cond(eq(scrollUpAndPullDown, 1), [
+            set(this.prevTranslateYOffset, state.position),
+            cond(eq(this.scrollUpAndPullDown, 1), [
               set(
-                prevTranslateYOffset,
-                sub(prevTranslateYOffset, lastStartScrollY)
+                this.prevTranslateYOffset,
+                sub(this.prevTranslateYOffset, this.lastStartScrollY)
               ),
-              set(lastStartScrollY, 0),
-              set(scrollUpAndPullDown, 0),
+              set(this.lastStartScrollY, 0),
+              set(this.scrollUpAndPullDown, 0),
             ]),
-            cond(eq(destSnapPoint, snapPoints[0]), [set(dragWithHandle, 0)]),
+            cond(eq(this.destSnapPoint, snapPoints[0]), [
+              set(this.dragWithHandle, 0),
+            ]),
             set(this.isManuallySetValue, 0),
             set(this.manualYOffset, 0),
             stopClock(clock),
-            prevTranslateYOffset,
+            this.prevTranslateYOffset,
           ],
           // We made the block return the updated position,
           state.position
@@ -455,100 +474,43 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         // position than the top
         cond(
           or(
-            dragWithHandle,
-            greaterOrEq(abs(this.prevDragY), lastStartScrollY)
+            this.dragWithHandle,
+            greaterOrEq(abs(this.prevDragY), this.lastStartScrollY)
           ),
-          set(prevTranslateYOffset, animationPosition)
+          set(this.prevTranslateYOffset, this.animationPosition)
         ),
-        set(animationFinished, 1),
+        set(this.animationFinished, 1),
         // By forcing that frameTime exceeds duration, it has the effect of stopping the animation
-        set(animationFrameTime, add(animationDuration, 1000)),
-        stopClock(animationClock),
-        set(lastSnap, animationPosition),
-        animationPosition,
+        set(this.animationFrameTime, add(animationDuration, 1000)),
+        stopClock(this.animationClock),
+        set(this.lastSnap, this.animationPosition),
+        this.animationPosition,
       ]),
       cond(
         or(
-          didGestureFinish,
+          this.didGestureFinish,
           this.isManuallySetValue,
-          clockRunning(animationClock)
+          clockRunning(this.animationClock)
         ),
         [
-          didScrollUpAndPullDown,
-          setTranslationY,
-          set(tempDestSnapPoint, add(snapPoints[0], extraOffset)),
-          cond(not(this.isManuallySetValue), set(this.nextSnapIndex, 0)),
-          set(
-            destSnapPoint,
-            cond(
-              this.isManuallySetValue,
-              this.manualYOffset,
-              calculateNextSnapPoint()
-            )
-          ),
-          cond(
-            and(
-              greaterThan(this.dragY, lastStartScrollY),
-              isAndroid,
-              not(dragWithHandle)
-            ),
-            call([], () => {
-              // This prevents the scroll glide from happening on Android when pulling down with inertia.
-              // It's not perfect, but does the job for now
-              const { method, args } = imperativeScrollOptions[
-                this.props.componentType
-              ];
-              // @ts-ignore
-              this.contentComponentRef.current?._component[method](args);
-            })
-          ),
-          set(this.dragY, 0),
-          set(velocityY, 0),
-          set(
-            lastSnap,
-            sub(
-              destSnapPoint,
-              cond(eq(scrollUpAndPullDown, 1), lastStartScrollY, 0)
-            )
-          ),
-          call([lastSnap], ([value]) => {
-            // This is the TapGHandler trick
-            // @ts-ignore
-            this.masterDrawer?.current?.setNativeProps({
-              maxDeltaY: value - this.getNormalisedSnapPoints()[0],
-            });
-          }),
-          set(
-            this.decelerationRate,
-            cond(
-              eq(isAndroid, 1),
-              cond(
-                eq(lastSnap, snapPoints[0]),
-                ANDROID_NORMAL_DECELERATION_RATE,
-                0
-              ),
-              IOS_NORMAL_DECELERATION_RATE
-            )
-          ),
-          cond(this.isManuallySetValue, [set(animationFinished, 0)]),
           runTiming({
-            clock: animationClock,
+            clock: this.animationClock,
             from: cond(
               this.isManuallySetValue,
-              prevTranslateYOffset,
-              add(prevTranslateYOffset, translationY)
+              this.prevTranslateYOffset,
+              add(this.prevTranslateYOffset, this.translationY)
             ),
-            to: destSnapPoint,
-            position: animationPosition,
-            finished: animationFinished,
-            frameTime: animationFrameTime,
+            to: this.destSnapPoint,
+            position: this.animationPosition,
+            finished: this.animationFinished,
+            frameTime: this.animationFrameTime,
           }),
         ],
         [
-          set(animationFrameTime, 0),
-          set(animationFinished, 0),
+          set(this.animationFrameTime, 0),
+          set(this.animationFinished, 0),
           // @ts-ignore
-          prevTranslateYOffset,
+          this.prevTranslateYOffset,
         ]
       ),
     ];
@@ -616,7 +578,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       ...rest
     } = this.props;
     const AnimatedScrollableComponent = this.scrollComponent;
-    const initialSnap = this.getNormalisedSnapPoints()[initialSnapIndex];
+    const normalisedSnapPoints = this.getNormalisedSnapPoints();
+    const initialSnap = normalisedSnapPoints[initialSnapIndex];
 
     const Content = (
       <Animated.View
@@ -681,6 +644,89 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             this.dragY,
             cond(not(eq(this.dragY, 0)), set(this.prevDragY, this.dragY))
           )}
+        />
+        <Animated.Code
+          exec={onChange(
+            this.didGestureFinish,
+            cond(this.didGestureFinish, [
+              this.didScrollUpAndPullDown,
+              this.setTranslationY,
+              set(
+                this.tempDestSnapPoint,
+                add(normalisedSnapPoints[0], this.extraOffset)
+              ),
+              set(this.nextSnapIndex, 0),
+              set(this.destSnapPoint, this.calculateNextSnapPoint()),
+              cond(
+                and(
+                  greaterThan(this.dragY, this.lastStartScrollY),
+                  this.isAndroid,
+                  not(this.dragWithHandle)
+                ),
+                call([], () => {
+                  // This prevents the scroll glide from happening on Android when pulling down with inertia.
+                  // It's not perfect, but does the job for now
+                  const { method, args } = imperativeScrollOptions[
+                    this.props.componentType
+                  ];
+                  // @ts-ignore
+                  this.contentComponentRef.current?._component[method](args);
+                })
+              ),
+              set(this.dragY, 0),
+              set(this.velocityY, 0),
+              set(
+                this.lastSnap,
+                sub(
+                  this.destSnapPoint,
+                  cond(
+                    eq(this.scrollUpAndPullDown, 1),
+                    this.lastStartScrollY,
+                    0
+                  )
+                )
+              ),
+              call([this.lastSnap], ([value]) => {
+                // This is the TapGHandler trick
+                // @ts-ignore
+                this.masterDrawer?.current?.setNativeProps({
+                  maxDeltaY: value - this.getNormalisedSnapPoints()[0],
+                });
+              }),
+              set(
+                this.decelerationRate,
+                cond(
+                  eq(this.isAndroid, 1),
+                  cond(
+                    eq(this.lastSnap, normalisedSnapPoints[0]),
+                    ANDROID_NORMAL_DECELERATION_RATE,
+                    0
+                  ),
+                  IOS_NORMAL_DECELERATION_RATE
+                )
+              ),
+            ])
+          )}
+        />
+        <Animated.Code
+          exec={onChange(this.isManuallySetValue, [
+            cond(
+              this.isManuallySetValue,
+              [
+                set(this.destSnapPoint, this.manualYOffset),
+                set(this.animationFinished, 0),
+                set(this.lastSnap, this.manualYOffset),
+                call([this.lastSnap], ([value]) => {
+                  // This is the TapGHandler trick
+                  // @ts-ignore
+                  this.masterDrawer?.current?.setNativeProps({
+                    maxDeltaY: value - this.getNormalisedSnapPoints()[0],
+                  });
+                }),
+              ],
+              [set(this.nextSnapIndex, 0)]
+            ),
+          ])}
         />
       </Animated.View>
     );
