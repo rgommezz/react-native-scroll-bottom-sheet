@@ -106,7 +106,7 @@ This is the list of exclusive props that are meant to be used to customise the b
 | renderHandle              | yes      |  `() => React.ReactNode`      | Render prop for the handle, should return a React Element |
 | onSettle                  | no       |  `(index: number) => void`       | Callback that is executed right after the bottom sheet settles in one of the snapping points. The new index is provided on the callback |
 | animatedPosition          | no       |  `Animated.Value<number>`       | Animated value that tracks the position of the drawer, being: 0 => closed, 1 => fully opened |
-| animationConfig           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 250ms and easing fn `Easing.inOut(Easing.ease)`  |
+| animationConfig           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 350ms and easing fn `Easing.inOut(Easing.ease)`  |
 | topInset                  | no       | `number`  | This value is useful to provide an offset (in dp) when applying percentages for snapping points |
 
 ### Inherited
