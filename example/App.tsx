@@ -20,6 +20,7 @@ function App() {
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="VerticalFlatList" component={VerticalFlatList} />
         <Stack.Screen
+          options={{ headerShown: false }}
           name="HorizontalFlatList"
           component={HorizontalFlatList}
         />

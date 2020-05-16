@@ -19,7 +19,7 @@ const Home: React.FC<Props> = ({ navigation }) => {
         />
       </View>
       <Button
-        title="Horizontal FlatList"
+        title="Map + horizontal lists"
         onPress={() => {
           navigation.navigate('HorizontalFlatList');
         }}
