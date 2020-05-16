@@ -54,7 +54,7 @@ const { height: windowHeight } = Dimensions.get('window');
 const DRAG_TOSS = 0.05;
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
-const DEFAULT_ANIMATION_DURATION = 250;
+const DEFAULT_ANIMATION_DURATION = 350;
 const DEFAULT_EASING = Easing.inOut(Easing.ease);
 const imperativeScrollOptions = {
   [FlatListComponentType]: {
