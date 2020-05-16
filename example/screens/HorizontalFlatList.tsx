@@ -32,7 +32,7 @@ function generateRandomIntFromInterval(min: number, max: number) {
 const { height: windowHeight, width: windowWidth } = Dimensions.get('window');
 
 const HorizontalFlatList: React.FC<Props> = () => {
-  const snapPointsFromTop = [128, '50%', windowHeight - 200];
+  const snapPointsFromTop = [128, '50%', windowHeight - 128];
   const bottomSheetRef = React.useRef<ScrollBottomSheet<any> | null>(null);
 
   const animatedPosition = React.useRef(new Value(0));
@@ -102,7 +102,10 @@ const HorizontalFlatList: React.FC<Props> = () => {
         contentContainerStyle={styles.contentContainerStyle}
       >
         {Array.from({ length: 20 }).map((_, i) => (
-          <View style={styles.row} key={i}>
+          <View
+            style={[styles.row, { borderTopWidth: i === 0 ? 0 : 1 }]}
+            key={i}
+          >
             <Text
               style={styles.title}
             >{`Popular in ${Faker.address.city()}`}</Text>
@@ -110,7 +113,7 @@ const HorizontalFlatList: React.FC<Props> = () => {
               showsHorizontalScrollIndicator={false}
               pagingEnabled
               initialNumToRender={2}
-              data={Array.from({ length: 5 }).map(
+              data={Array.from({ length: 10 }).map(
                 (_, index) => `Item ${index}`
               )}
               horizontal
@@ -134,6 +137,8 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
     paddingVertical: 16,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
