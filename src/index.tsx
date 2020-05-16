@@ -467,8 +467,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       ];
     };
 
-    const translateYOffset = [
-      cond(isAnimationInterrupted, [
+    const translateYOffset = cond(
+      isAnimationInterrupted,
+      [
         // set(prevTranslateYOffset, animationPosition) should only run if we are
         // interrupting an animation when the drawer is currently in a different
         // position than the top
@@ -480,12 +481,16 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           set(this.prevTranslateYOffset, this.animationPosition)
         ),
         set(this.animationFinished, 1),
+        set(this.translationY, 0),
+        // Resetting appropriate values
+        set(drawerOldGestureState, GestureState.END),
+        set(handleOldGestureState, GestureState.END),
         // By forcing that frameTime exceeds duration, it has the effect of stopping the animation
         set(this.animationFrameTime, add(animationDuration, 1000)),
         stopClock(this.animationClock),
         set(this.lastSnap, this.animationPosition),
-        this.animationPosition,
-      ]),
+        this.prevTranslateYOffset,
+      ],
       cond(
         or(
           this.didGestureFinish,
@@ -512,8 +517,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           // @ts-ignore
           this.prevTranslateYOffset,
         ]
-      ),
-    ];
+      )
+    );
 
     this.translateY = interpolate(
       add(translateYOffset, this.dragY, multiply(scrollY, -1)),
