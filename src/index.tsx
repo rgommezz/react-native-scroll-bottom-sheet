@@ -269,6 +269,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const drawerGestureState = new Value<GestureState>(-1);
     const drawerOldGestureState = new Value<GestureState>(-1);
 
+    const lastSnapInRange = new Value(1);
     this.prevTranslateYOffset = new Value(initialSnap);
     this.translationY = new Value(initialSnap);
 
@@ -323,7 +324,21 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       )
     );
 
+    // Function that determines if the last snap point is in the range {snapPoints}
+    // In the case of interruptions in the middle of an animation, we'll get
+    // lastSnap values outside the range
+    const isLastSnapPointInRange = (i: number = 0): Animated.Node<number> =>
+      i === snapPoints.length
+        ? lastSnapInRange
+        : cond(
+            eq(this.lastSnap, snapPoints[i]),
+            [set(lastSnapInRange, 1)],
+            isLastSnapPointInRange(i + 1)
+          );
+
     const scrollY = [
+      set(lastSnapInRange, 0),
+      isLastSnapPointInRange(),
       cond(
         or(
           didHandleGestureBegin,
@@ -341,7 +356,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         and(
           eq(this.dragWithHandle, 1),
           greaterThan(snapPoints[0], sub(this.lastSnap, abs(this.dragY))),
-          not(eq(this.lastSnap, snapPoints[0]))
+          and(not(eq(this.lastSnap, snapPoints[0])), lastSnapInRange)
         ),
         [
           set(this.lastSnap, snapPoints[0]),
