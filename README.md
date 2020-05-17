@@ -28,6 +28,8 @@ npm i react-native-scroll-bottom-sheet
 yarn add react-native-scroll-bottom-sheet
 ```
 
+If you don't use Expo, you also need to install [react-native-gesture-handler](https://github.com/software-mansion/react-native-gesture-handler) and [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated) libraries along with this one.
+
 ## Usage
 
 The below is an example using the core `FlatList` from React Native as the scrollable component.
