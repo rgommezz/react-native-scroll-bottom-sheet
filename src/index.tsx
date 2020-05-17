@@ -355,7 +355,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         // change scroll direction without releasing the gesture, it doesn't pull down the drawer again
         and(
           eq(this.dragWithHandle, 1),
-          greaterThan(snapPoints[0], sub(this.lastSnap, abs(this.dragY))),
+          greaterThan(snapPoints[0], add(this.lastSnap, this.dragY)),
           and(not(eq(this.lastSnap, snapPoints[0])), lastSnapInRange)
         ),
         [
