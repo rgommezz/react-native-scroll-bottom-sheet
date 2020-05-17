@@ -12,7 +12,7 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 - **Support for interruptions**: animations can be interrupted by another gesture to avoid abrupt jumps on the component :point_down:
 - **Imperative snapping**: for cases where you need to close the bottom sheet by pressing an external touchable :sunglasses:
 - **Animate all the things**: you can animate other elements on the screen based on the bottom sheet position. See the examples attached :rocket:
-- **TS definitions**: For those of you like me who can't look back to start a project in plain JS :hammer_and_wrench: 
+- **TS definitions**: For those of you like me who can't look back to start a project in plain JS :hammer_and_wrench:
 
 <br />
 <br />
@@ -120,7 +120,7 @@ This is the list of exclusive props that are meant to be used to customise the b
 | `renderHandle`              | yes      |  `() => React.ReactNode`      | Render prop for the handle, should return a React Element |
 | `onSettle`                  | no       |  `(index: number) => void`       | Callback that is executed right after the bottom sheet settles in one of the snapping points. The new index is provided on the callback |
 | `animatedPosition`          | no       |  `Animated.Value<number>`       | Animated value that tracks the position of the drawer, being: 0 => closed, 1 => fully opened |
-| `animationConfig`           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 350ms and easing fn `Easing.inOut(Easing.linear)`  |
+| `animationConfig`           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 250ms and easing fn `Easing.inOut(Easing.linear)`  |
 | `topInset`                  | no       | `number`  | This value is useful to provide an offset (in dp) when applying percentages for snapping points |
 | `innerRef`                  | no       | `RefObject`  | Ref to the inner scrollable component (ScrollView, FlatList or SectionList), so that you can call its imperative methods. For instance, calling `scrollTo` on a ScrollView. In order to so, you have to use `getNode` as well, since it's wrapped into an _animated_ component: `ref.current.getNode().scrollTo({y: 0, animated: true})` |
 
