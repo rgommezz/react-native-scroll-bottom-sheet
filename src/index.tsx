@@ -504,7 +504,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         // By forcing that frameTime exceeds duration, it has the effect of stopping the animation
         set(this.animationFrameTime, add(animationDuration, 1000)),
         stopClock(this.animationClock),
-        set(this.lastSnap, this.animationPosition),
         this.prevTranslateYOffset,
       ],
       cond(
