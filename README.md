@@ -1,6 +1,19 @@
 # Scroll Bottom Sheet
 
-Cross platform scrollable bottom sheet with virtualisation support, with animations and gestures running at 60 FPS and fully implemented in JS land. It supports all core scrollable components from React Native: [FlatList](https://reactnative.dev/docs/flatlist), [ScrollView](https://reactnative.dev/docs/scrollview) and [SectionList](https://reactnative.dev/docs/sectionlist) :rocket:
+Cross platform scrollable bottom sheet with virtualisation support, with fully native animations, that integrates with all core scrollable components from React Native: [FlatList](https://reactnative.dev/docs/flatlist), [ScrollView](https://reactnative.dev/docs/scrollview) and [SectionList](https://reactnative.dev/docs/sectionlist). Also, it's 100% compatible with Expo.
+
+## Features
+- **Virtualisation support**: `FlatList` and `SectionList` components are 1st class citizens, as well as `ScrollView` :electron:
+- **Peformant**: runs at 60 FPS even on low grade Android devices :iphone:
+- **No native dependencies**: fully implemented in JS land, thanks to the powerful [Gesture Handler](https://github.com/software-mansion/react-native-gesture-handler) and [Reanimated](https://github.com/software-mansion/react-native-reanimated) libraries :muscle:
+- **Support for horizontal FlatList/ScrollView**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded (i.e show recommended places). Take a look at one of the examples where that concept is illustrated :fire:
+- **Expo compatible**: no need to eject to enjoy this component! :smiley:
+- **Minimalistic**: exposes a set of fundamental props to control its behaviour :gear:
+- **Support for interruptions**: animations can be interrupted by another gesture to avoid abrupt jumps on the component :point_down:
+- **Imperative snapping**: for cases where you need to close the bottom sheet by pressing an external touchable :sunglasses:
+- **Animate all the things**: you can animate other elements on the screen based on the bottom sheet position. See the examples attached :rocket:
+- **TS definitions**: For those of you like me who can't look back to start a project in plain JS :hammer_and_wrench: 
+
 
 ## Installation
 
