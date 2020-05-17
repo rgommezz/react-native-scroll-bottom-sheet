@@ -14,12 +14,14 @@ Cross platform scrollable bottom sheet with virtualisation support, with fully n
 - **Animate all the things**: you can animate other elements on the screen based on the bottom sheet position. See the examples attached :rocket:
 - **TS definitions**: For those of you like me who can't look back to start a project in plain JS :hammer_and_wrench: 
 
-
+<br />
+<br />
 
 ![](gifs/banking.gif)  |  ![](gifs/map.gif) |
-:---------------:|:----------------:|
+:---------------------:|:------------------:|
 
-
+<br />
+<br />
 
 ## Installation
 
