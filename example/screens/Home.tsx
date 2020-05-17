@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { Button, View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HomeStackParamsList } from '../App';
+import { Button } from 'react-native-paper';
 
 interface Props {
   navigation: StackNavigationProp<HomeStackParamsList, 'Home'>;
@@ -9,23 +10,38 @@ interface Props {
 
 const Home: React.FC<Props> = ({ navigation }) => {
   return (
-    <View style={{ flex: 1, padding: 16, backgroundColor: 'white' }}>
-      <View style={{ marginBottom: 32 }}>
+    <View style={styles.container}>
+      <View style={styles.firstButton}>
         <Button
-          title="Simple FlatList"
+          mode="contained"
           onPress={() => {
-            navigation.navigate('VerticalFlatList');
+            navigation.navigate('SectionListExample');
           }}
-        />
+        >
+          Bank - Section List
+        </Button>
       </View>
       <Button
-        title="Map + horizontal lists"
+        mode="contained"
         onPress={() => {
-          navigation.navigate('HorizontalFlatList');
+          navigation.navigate('HorizontalFlatListExample');
         }}
-      />
+      >
+        Map - horizontal lists
+      </Button>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: 'white',
+  },
+  firstButton: {
+    marginBottom: 32,
+  },
+});
 
 export default Home;
