@@ -1,6 +1,6 @@
 {
   "name": "react-native-scroll-bottom-sheet",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Cross platform scrollable bottom sheet with virtualization support, running at 60 FPS and fully implemented in JS land",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
