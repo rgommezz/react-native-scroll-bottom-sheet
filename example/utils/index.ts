@@ -20,7 +20,7 @@ export const createMockData = () => {
   const today = new Date();
   Array.from({ length: 200 }).forEach((_, index) => {
     const date = format(
-      subDays(today, generateRandomIntFromInterval(0, 20)),
+      subDays(today, generateRandomIntFromInterval(0, 30)),
       'yyyy LL d'
     );
     const amount = (generateRandomIntFromInterval(100, 10000) / 100).toFixed(2);

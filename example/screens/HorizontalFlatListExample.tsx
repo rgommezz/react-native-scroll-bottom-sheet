@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { Dimensions, StyleSheet, View } from 'react-native';
+import { Dimensions, Platform, StyleSheet, View } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { HomeStackParamsList } from '../App';
 import ScrollBottomSheet from 'react-native-scroll-bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import MapView from 'react-native-maps';
 import Animated, {
   Extrapolate,
@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Handle from '../components/Handle';
 import Carousel from '../components/Carousel';
+import { TouchableRipple } from 'react-native-paper';
 
 interface Props {
   navigation: StackNavigationProp<
@@ -29,7 +30,7 @@ const initialRegion = {
 const { height: windowHeight } = Dimensions.get('window');
 const snapPointsFromTop = [128, '50%', windowHeight - 128];
 
-const HorizontalFlatListExample: React.FC<Props> = () => {
+const HorizontalFlatListExample: React.FC<Props> = ({ navigation }) => {
   const bottomSheetRef = React.useRef<ScrollBottomSheet<any> | null>(null);
 
   const animatedPosition = React.useRef(new Value(0));
@@ -56,17 +57,39 @@ const HorizontalFlatListExample: React.FC<Props> = () => {
           StyleSheet.absoluteFillObject,
           { backgroundColor: 'black', opacity },
         ]}
-      >
-        <Ionicons
-          style={{ position: 'absolute', top: 32, right: 24 }}
-          name="md-close"
-          size={32}
-          color="white"
+      />
+      <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
+        <TouchableRipple
+          style={[styles.iconContainer, { right: 16 }]}
           onPress={() => {
             bottomSheetRef.current?.snapTo(2);
           }}
-        />
-      </Animated.View>
+          borderless
+        >
+          <MaterialCommunityIcons
+            name="close"
+            size={32}
+            color="white"
+            style={styles.icon}
+          />
+        </TouchableRipple>
+        {Platform.OS === 'ios' && (
+          <TouchableRipple
+            style={[styles.iconContainer, { left: 16 }]}
+            onPress={() => {
+              navigation.goBack();
+            }}
+            borderless
+          >
+            <Ionicons
+              name="ios-arrow-back"
+              size={32}
+              color="#3F51B5"
+              style={styles.icon}
+            />
+          </TouchableRipple>
+        )}
+      </View>
       <ScrollBottomSheet<string>
         ref={bottomSheetRef}
         componentType="FlatList"
@@ -95,6 +118,26 @@ const styles = StyleSheet.create({
   mapStyle: {
     width: Dimensions.get('window').width,
     height: Dimensions.get('window').height,
+  },
+  iconContainer: {
+    position: 'absolute',
+    top: 32,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  icon: {
+    paddingTop: Platform.OS === 'ios' ? 4 : 0,
+    paddingLeft: Platform.OS === 'ios' ? 2 : 0,
+  },
+  panelHandle: {
+    width: 40,
+    height: 6,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 4,
+    marginBottom: 10,
   },
 });
 

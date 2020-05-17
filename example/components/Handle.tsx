@@ -1,9 +1,13 @@
 import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 
-const Handle: React.FC = () => (
-  <View style={styles.header}>
-    <View style={styles.panelHandle} />
+interface Props {
+  style?: StyleProp<ViewStyle>;
+}
+
+const Handle: React.FC<Props> = ({ children, style }) => (
+  <View style={[styles.header, style]}>
+    {children || <View style={styles.panelHandle} />}
   </View>
 );
 
@@ -27,7 +31,7 @@ const styles = StyleSheet.create({
   },
   panelHandle: {
     width: 40,
-    height: 2,
+    height: 6,
     backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 4,
     marginBottom: 10,
