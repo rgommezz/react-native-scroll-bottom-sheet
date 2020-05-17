@@ -15,6 +15,12 @@ Cross platform scrollable bottom sheet with virtualisation support, with fully n
 - **TS definitions**: For those of you like me who can't look back to start a project in plain JS :hammer_and_wrench: 
 
 
+
+![](gifs/banking.gif)  |  ![](gifs/map.gif) |
+:---------------:|:----------------:|
+
+
+
 ## Installation
 
 #### npm
