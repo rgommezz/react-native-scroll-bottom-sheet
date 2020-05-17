@@ -1,7 +1,9 @@
 {
   "expo": {
-    "name": "example",
-    "slug": "example",
+    "name": "react-native-scroll-bottom-sheet-example",
+    "slug": "react-native-scroll-bottom-sheet-example",
+    "description": "Example application that showcases the power of the library with 2 examples: a banking style app and maps bottom sheet with horizontal lists/carousels embedded",
+    "privacy": "public",
     "platforms": [
       "ios",
       "android",
