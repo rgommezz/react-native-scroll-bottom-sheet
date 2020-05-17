@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, RefObject } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -55,7 +55,7 @@ const DRAG_TOSS = 0.05;
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
 const DEFAULT_ANIMATION_DURATION = 350;
-const DEFAULT_EASING = Easing.inOut(Easing.ease);
+const DEFAULT_EASING = Easing.inOut(Easing.linear);
 const imperativeScrollOptions = {
   [FlatListComponentType]: {
     method: 'scrollToIndex',
@@ -152,6 +152,10 @@ type CommonProps = {
    * @see https://github.com/th3rdwave/react-native-safe-area-context#usage, insets.top
    */
   topInset: number;
+  /**
+   * Reference to FlatList, ScrollView or SectionList in order to execute its imperative methods.
+   */
+  innerRef: RefObject<FlatList | ScrollView | SectionList>;
 };
 
 type Props<T> = CommonProps &
@@ -160,6 +164,7 @@ type Props<T> = CommonProps &
 export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   static defaultProps = {
     topInset: 0,
+    innerRef: React.createRef<AnimatedScrollableComponent>(),
   };
   /**
    * Gesture Handler references
@@ -169,10 +174,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   private drawerContentRef = React.createRef<PanGestureHandler>();
   private scrollComponentRef = React.createRef<NativeViewGestureHandler>();
 
-  /**
-   * Reference to FlatList, ScrollView or SectionList in order to execute its imperative methods.
-   */
-  private contentComponentRef = React.createRef<AnimatedScrollableComponent>();
   /**
    * ScrollView prop
    */
@@ -622,8 +623,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                 overScrollMode="never"
                 bounces={false}
                 {...rest}
-                // @ts-ignore
-                ref={this.contentComponentRef}
+                ref={this.props.innerRef}
                 // @ts-ignore
                 decelerationRate={this.decelerationRate}
                 onScrollBeginDrag={this.onScrollBeginDrag}
@@ -675,7 +675,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                     this.props.componentType
                   ];
                   // @ts-ignore
-                  this.contentComponentRef.current?._component[method](args);
+                  this.props.innerRef.current?.getNode()[method](args);
                 })
               ),
               set(this.dragY, 0),
