@@ -7,7 +7,6 @@ const Transaction = React.memo(
   ({ title, subtitle, amount, iconColor }: ListItemData) => (
     <List.Item
       title={title}
-      onPress={() => null}
       description={subtitle}
       left={props => <List.Icon {...props} icon="folder" color={iconColor} />}
       right={() => (
