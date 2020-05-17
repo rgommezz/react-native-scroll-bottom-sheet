@@ -9,7 +9,7 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 - **Support for horizontal FlatList/ScrollView**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded (i.e show recommended places). Take a look at one of the examples where that concept is illustrated :fire:
 - **Expo compatible**: no need to eject to enjoy this component! :smiley:
 - **Minimalistic**: exposes a set of fundamental props to control its behaviour :gear:
-- **Support for interruptions**: animations can be interrupted by another gesture to avoid abrupt jumps on the component :point_down:
+- **Support for interruptions**: animations can be interrupted anytime without any sudden jumps on the component position :point_down:
 - **Imperative snapping**: for cases where you need to close the bottom sheet by pressing an external touchable :sunglasses:
 - **Animate all the things**: you can animate other elements on the screen based on the bottom sheet position. See the examples attached :rocket:
 - **TS definitions**: For those of you like me who can't look back to start a project in plain JS :hammer_and_wrench:
