@@ -6,7 +6,7 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 - **Virtualisation support**: `FlatList` and `SectionList` components are 1st class citizens, as well as `ScrollView` :electron:
 - **Peformant**: runs at 60 FPS even on low grade Android devices :iphone:
 - **No native dependencies**: fully implemented in JS land, thanks to the powerful [Gesture Handler](https://github.com/software-mansion/react-native-gesture-handler) and [Reanimated](https://github.com/software-mansion/react-native-reanimated) libraries :muscle:
-- **Support for horizontal FlatList/ScrollView**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded (i.e show recommended places). Take a look at one of the examples where that concept is illustrated :fire:
+- **Horizontal mode**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded (i.e show recommended places). Take a look at one of the examples where that concept is illustrated :fire:
 - **Expo compatible**: no need to eject to enjoy this component! :smiley:
 - **Minimalistic**: exposes a set of fundamental props to control its behaviour :gear:
 - **Support for interruptions**: animations can be interrupted anytime without any sudden jumps on the component position :point_down:
