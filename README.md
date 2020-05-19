@@ -40,6 +40,45 @@ yarn add react-native-scroll-bottom-sheet
 
 If you don't use Expo, you also need to install [react-native-gesture-handler](https://github.com/software-mansion/react-native-gesture-handler) and [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated) libraries along with this one.
 
+## Compatibility table
+You may add some touchable components inside the bottom sheet or several `FlatList` widgets for horizontal mode. Unfortunately, not all _interactable_ React Native components are compatible with this library. This is due to some limitations on `react-native-gesture-handler`, which this library uses behind the scenes. For that, please follow this compatibility table:
+
+| Import                       | Touchable | Flatlist    |
+| -------------------------    | --------  | -------     |
+| react-native                 | iOS       |      🚫     |
+| react-native-gesture-handler | Android   | Android, iOS|
+
+### Touchables
+As you can see on the table, for any touchable component (`TouchableOpacity`, `TouchableHighlight`, ...) you need to have different imports depending on the platform. The below is a snippet you may find useful to abstract that into a component.
+
+```js
+import React from "react";
+import { Platform, TouchableOpacity } from "react-native";
+import { TouchableOpacity as RNGHTouchableOpacity } from "react-native-gesture-handler";
+
+const BottomSheetTouchable = (props) => {
+  if (Platform.OS === "android") {
+    return (
+      <RNGHTouchableOpacity {...props} />
+    );
+  }
+
+  return <TouchableOpacity {...props} />
+};
+
+export default BottomSheetTouchable;
+```
+
+### Horizontal Mode
+For this mode to work properly, **you have to import `FlatList` from react-native-gesture-handler** instead of react-native.
+
+```js
+import { FlatList } from 'react-native-gesture-handler';
+
+...
+```
+
+
 ## Usage
 
 The below is an example using the core `FlatList` from React Native as the scrollable component.
