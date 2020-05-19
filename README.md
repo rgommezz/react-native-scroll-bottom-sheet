@@ -7,12 +7,10 @@
 Cross platform scrollable bottom sheet with virtualisation support and fully native animations, that integrates with all core scrollable components from React Native: [FlatList](https://reactnative.dev/docs/flatlist), [ScrollView](https://reactnative.dev/docs/scrollview) and [SectionList](https://reactnative.dev/docs/sectionlist). Also, it's 100% compatible with Expo.
 
 <br />
-<br />
 
 ![](gifs/banking.gif)  |  ![](gifs/map.gif) |
 :---------------------:|:------------------:|
 
-<br />
 <br />
 
 ## Features
