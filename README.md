@@ -1,18 +1,10 @@
 # Scroll Bottom Sheet
+[![npm](https://img.shields.io/npm/v/react-native-scroll-bottom-sheet?color=brightgreen)](https://www.npmjs.com/package/react-native-scroll-bottom-sheet)
+[![npm bundle size](https://img.shields.io/bundlephobia/min/react-native-scroll-bottom-sheet)](https://bundlephobia.com/result?p=react-native-scroll-bottom-sheet)
+![platforms: ios, android, web](https://img.shields.io/badge/platform-ios%2C%20android-blue)
+[![license MIT](https://img.shields.io/badge/license-MIT-brightgreen)](https://github.com/rgommezz/react-native-scroll-bottom-sheet/blob/master/LICENSE)
 
 Cross platform scrollable bottom sheet with virtualisation support and fully native animations, that integrates with all core scrollable components from React Native: [FlatList](https://reactnative.dev/docs/flatlist), [ScrollView](https://reactnative.dev/docs/scrollview) and [SectionList](https://reactnative.dev/docs/sectionlist). Also, it's 100% compatible with Expo.
-
-## Features
-- **Virtualisation support**: `FlatList` and `SectionList` components are 1st class citizens, as well as `ScrollView` :electron:
-- **Peformant**: runs at 60 FPS even on low grade Android devices :iphone:
-- **No native dependencies**: fully implemented in JS land, thanks to the powerful [Gesture Handler](https://github.com/software-mansion/react-native-gesture-handler) and [Reanimated](https://github.com/software-mansion/react-native-reanimated) libraries :muscle:
-- **Horizontal mode**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded (i.e show recommended places). Take a look at one of the examples where that concept is illustrated :fire:
-- **Expo compatible**: no need to eject to enjoy this component! :smiley:
-- **Minimalistic**: exposes a set of fundamental props to control its behaviour :gear:
-- **Support for interruptions**: animations can be interrupted anytime without any sudden jumps on the component position :point_down:
-- **Imperative snapping**: for cases where you need to close the bottom sheet by pressing an external touchable :sunglasses:
-- **Animate all the things**: you can animate other elements on the screen based on the bottom sheet position. See the examples attached :rocket:
-- **TS definitions**: For those of you like me who can't look back to start a project in plain JS :hammer_and_wrench:
 
 <br />
 <br />
@@ -22,6 +14,18 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 
 <br />
 <br />
+
+## Features
+- **:electron: Virtualisation support**: `FlatList` and `SectionList` components are 1st class citizens, as well as `ScrollView`
+- **:fire: Peformant**: runs at 60 FPS even on low grade Android devices
+- **:muscle: No native dependencies**: fully implemented in JS land, thanks to the powerful [Gesture Handler](https://github.com/software-mansion/react-native-gesture-handler) and [Reanimated](https://github.com/software-mansion/react-native-reanimated) libraries
+- **:white_check_mark: Horizontal mode**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded (i.e show recommended places). Take a look at one of the examples where that concept is illustrated
+- **:iphone: Expo compatible**: no need to eject to enjoy this component!
+- **:gear: Minimalistic**: exposes a set of fundamental props to control its behaviour
+- **:point_down: Support for interruptions**: animations can be interrupted anytime without any sudden jumps on the component position
+- **:sunglasses: Imperative snapping**: for cases where you need to close the bottom sheet by pressing an external touchable
+- **:rocket: Animate all the things**: you can animate other elements on the screen based on the bottom sheet position. See the examples attached
+- **:hammer_and_wrench: TS definitions**: For those of you like me who can't look back to start a project in plain JS
 
 ## Installation
 
