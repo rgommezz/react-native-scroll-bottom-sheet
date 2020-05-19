@@ -16,13 +16,13 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 ## Features
 - **:electron: Virtualisation support**: `FlatList` and `SectionList` components are 1st class citizens, as well as `ScrollView`
 - **:fire: Peformant**: runs at 60 FPS even on low grade Android devices
-- **:muscle: No native dependencies**: fully implemented in JS land, thanks to the powerful [Gesture Handler](https://github.com/software-mansion/react-native-gesture-handler) and [Reanimated](https://github.com/software-mansion/react-native-reanimated) libraries
-- **:white_check_mark: Horizontal mode**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded (i.e show recommended places). Take a look at one of the examples where that concept is illustrated
-- **:iphone: Expo compatible**: no need to eject to enjoy this component!
-- **:gear: Minimalistic**: exposes a set of fundamental props to control its behaviour
-- **:point_down: Support for interruptions**: animations can be interrupted anytime without any sudden jumps on the component position
+- **:white_check_mark: Horizontal mode**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded
+- **:gear: Minimalistic**: exposes a set of fundamental props to easily control its behaviour
+- **:point_down: Support for interruptions**: animations can be interrupted anytime smoothly without sudden jumps
 - **:sunglasses: Imperative snapping**: for cases where you need to close the bottom sheet by pressing an external touchable
-- **:rocket: Animate all the things**: you can animate other elements on the screen based on the bottom sheet position. See the examples attached
+- **:rocket: Animate all the things**: you can animate other elements on the screen based on the bottom sheet position
+- **:muscle: No native dependencies**: fully implemented in JS land, thanks to the powerful [Gesture Handler](https://github.com/software-mansion/react-native-gesture-handler) and [Reanimated](https://github.com/software-mansion/react-native-reanimated) libraries
+- **:iphone: Expo compatible**: no need to eject to enjoy this component!
 - **:hammer_and_wrench: TS definitions**: For those of you like me who can't look back to start a project in plain JS
 
 ## Installation
@@ -142,6 +142,15 @@ bottomSheetRef.current.snapTo(0)
 ```
 
 `bottomSheetRef` refers to the [`ref`](https://reactjs.org/docs/react-api.html#reactcreateref) passed to the `ScrollBottomSheet` component.
+
+## Example
+There is an Expo example application that you can play with to get a good grasp on the different customisation options. In case of Android, you can directly open the project [here](https://expo.io/@rgommezz/react-native-scroll-bottom-sheet-example). For iOS, head to the [example folder](https://github.com/rgommezz/react-native-scroll-bottom-sheet/tree/master/example) and run the project locally:
+
+```bash
+$ npm install
+
+$ npm start
+```
 
 ## Typescript
 The library has been written in Typescript, so you'll get type checking and autocompletion if you use it as well.
