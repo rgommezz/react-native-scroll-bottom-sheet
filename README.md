@@ -8,7 +8,7 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 
 <br />
 
-![](gifs/banking.gif)  |  ![](gifs/map.gif) |
+![](gifs/bank.gif)  |  ![](gifs/maps.gif) |
 :---------------------:|:------------------:|
 
 <br />
