@@ -28,7 +28,7 @@ const navBarHeight = 56;
 const sections = createMockData();
 
 const SectionListExample: React.FC<Props> = () => {
-  const snapPointsFromTop = [0, '40%', windowHeight - 264];
+  const snapPointsFromTop = [96, '45%', windowHeight - 264];
   const animatedPosition = React.useRef(new Value(0.5));
   const handleLeftRotate = concat(
     interpolate(animatedPosition.current, {
@@ -48,7 +48,7 @@ const SectionListExample: React.FC<Props> = () => {
   );
   const cardScale = interpolate(animatedPosition.current, {
     inputRange: [0, 0.6, 1],
-    outputRange: [1, 1, 0.8],
+    outputRange: [1, 1, 0.9],
     extrapolate: Extrapolate.CLAMP,
   });
 
@@ -118,7 +118,7 @@ const SectionListExample: React.FC<Props> = () => {
           easing: Easing.inOut(Easing.linear),
         }}
         renderHandle={() => (
-          <Handle style={{ paddingVertical: 20 }}>
+          <Handle style={{ paddingVertical: 20, backgroundColor: '#F3F4F9' }}>
             <Animated.View
               style={[
                 styles.handle,

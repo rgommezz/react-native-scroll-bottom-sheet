@@ -28,7 +28,7 @@ const initialRegion = {
   longitude: -0.1255756,
 };
 const { height: windowHeight } = Dimensions.get('window');
-const snapPointsFromTop = [128, '50%', windowHeight - 128];
+const snapPointsFromTop = [96, '50%', windowHeight - 128];
 
 const HorizontalFlatListExample: React.FC<Props> = ({ navigation }) => {
   const bottomSheetRef = React.useRef<ScrollBottomSheet<any> | null>(null);
@@ -36,7 +36,7 @@ const HorizontalFlatListExample: React.FC<Props> = ({ navigation }) => {
   const animatedPosition = React.useRef(new Value(0));
   const opacity = interpolate(animatedPosition.current, {
     inputRange: [0, 1],
-    outputRange: [0, 0.5],
+    outputRange: [0, 0.75],
     extrapolate: Extrapolate.CLAMP,
   });
 
@@ -84,7 +84,7 @@ const HorizontalFlatListExample: React.FC<Props> = ({ navigation }) => {
             <Ionicons
               name="ios-arrow-back"
               size={32}
-              color="#3F51B5"
+              color="white"
               style={styles.icon}
             />
           </TouchableRipple>
@@ -101,7 +101,7 @@ const HorizontalFlatListExample: React.FC<Props> = ({ navigation }) => {
         keyExtractor={i => `row-${i}`}
         initialNumToRender={5}
         contentContainerStyle={styles.contentContainerStyle}
-        data={Array.from({ length: 20 }).map((_, i) => String(i))}
+        data={Array.from({ length: 100 }).map((_, i) => String(i))}
         renderItem={renderRow}
       />
     </View>

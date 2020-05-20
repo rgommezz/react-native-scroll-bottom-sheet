@@ -12,9 +12,9 @@ const Carousel: React.FC<{ index: number }> = React.memo(
       <View style={[styles.row, { borderTopWidth: index === 0 ? 0 : 1 }]}>
         <Text style={styles.title}>{`Popular in ${Faker.address.city()}`}</Text>
         <FlatList
+          contentContainerStyle={{ paddingHorizontal: 8 }}
           showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          initialNumToRender={2}
+          initialNumToRender={5}
           data={Array.from({ length: 10 }).map((_, i) => String(i))}
           horizontal
           keyExtractor={j => `row-${index}-item-${j}`}

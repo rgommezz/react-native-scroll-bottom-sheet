@@ -26,10 +26,6 @@ const CarouselItem: React.FC = React.memo(
                   }
             }
           />
-          <Card.Content>
-            <Title style={{ marginTop: 8 }}>{Faker.address.streetName()}</Title>
-            <Paragraph>{Faker.address.streetSuffix()}</Paragraph>
-          </Card.Content>
         </Card>
       </View>
     );
@@ -41,11 +37,12 @@ export default CarouselItem;
 
 const styles = StyleSheet.create({
   item: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingVertical: 8,
   },
   imageStyle: {
-    width: windowWidth - 32,
+    width: (windowWidth - 32) / 1.5,
+    height: 150,
     resizeMode: 'cover',
   },
 });
