@@ -159,9 +159,9 @@ type CommonProps = {
    */
   innerRef: RefObject<FlatList | ScrollView | SectionList>;
   /*
-   * Style to be applied handling the handle and the content.
+   * Style to be applied to the container.
    */
-  containerStyle: StyleProp<ViewStyle>;
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
 type Props<T> = CommonProps &

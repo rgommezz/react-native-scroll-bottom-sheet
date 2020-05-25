@@ -164,6 +164,7 @@ This is the list of exclusive props that are meant to be used to customise the b
 | `animationConfig`           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 250ms and easing fn `Easing.inOut(Easing.linear)`  |
 | `topInset`                  | no       | `number`  | This value is useful to provide an offset (in dp) when applying percentages for snapping points |
 | `innerRef`                  | no       | `RefObject`  | Ref to the inner scrollable component (ScrollView, FlatList or SectionList), so that you can call its imperative methods. For instance, calling `scrollTo` on a ScrollView. In order to so, you have to use `getNode` as well, since it's wrapped into an _animated_ component: `ref.current.getNode().scrollTo({y: 0, animated: true})` |
+| `containerStyle`            | no       | `StyleProp<ViewStyle>`  | Style to be applied to the container (Handle and Content) |
 
 
 ### Inherited
