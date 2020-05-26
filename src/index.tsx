@@ -10,6 +10,8 @@ import {
   SectionListProps,
   StyleSheet,
   View,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import Animated, {
   abs,
@@ -156,6 +158,10 @@ type CommonProps = {
    * Reference to FlatList, ScrollView or SectionList in order to execute its imperative methods.
    */
   innerRef: RefObject<FlatList | ScrollView | SectionList>;
+  /*
+   * Style to be applied to the container.
+   */
+  containerStyle?: StyleProp<ViewStyle>;
 };
 
 type Props<T> = CommonProps &
@@ -595,6 +601,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       componentType,
       onSettle,
       animatedPosition,
+      containerStyle,
       ...rest
     } = this.props;
     const AnimatedScrollableComponent = this.scrollComponent;
@@ -605,6 +612,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
+          containerStyle,
           // @ts-ignore
           {
             transform: [{ translateY: this.translateY }],
