@@ -612,8 +612,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
-          // @ts-ignore
           containerStyle,
+          // @ts-ignore
           {
             transform: [{ translateY: this.translateY }],
           },
