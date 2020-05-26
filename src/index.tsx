@@ -10,7 +10,6 @@ import {
   SectionListProps,
   StyleSheet,
   View,
-  StyleProp,
   ViewStyle,
 } from 'react-native';
 import Animated, {
@@ -161,7 +160,7 @@ type CommonProps = {
   /*
    * Style to be applied to the container.
    */
-  containerStyle?: StyleProp<ViewStyle>;
+  containerStyle?: Animated.AnimateStyle<ViewStyle>;
 };
 
 type Props<T> = CommonProps &
