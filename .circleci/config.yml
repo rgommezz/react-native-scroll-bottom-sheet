@@ -1,81 +1,19 @@
-version: 2
-
-defaults: &defaults
-  docker:
-    - image: circleci/node:10
-  working_directory: ~/project
-
+version: 2.1
+orbs:
+  node: circleci/node@1.1.6
 jobs:
-  install-dependencies:
-    <<: *defaults
+  lint-and-ts:
+    executor:
+      name: node/default
     steps:
       - checkout
-      - attach_workspace:
-          at: ~/project
-      - restore_cache:
-          keys:
-            - dependencies-{{ checksum "package.json" }}
-            - dependencies-
-      - restore_cache:
-          keys:
-            - dependencies-example-{{ checksum "example/package.json" }}
-            - dependencies-example-
-      - run: |
-          yarn install --cwd example --frozen-lockfile
-          yarn install --frozen-lockfile
-      - save_cache:
-          key: dependencies-{{ checksum "package.json" }}
-          paths: node_modules
-      - save_cache:
-          key: dependencies-example-{{ checksum "example/package.json" }}
-          paths: example/node_modules
-      - persist_to_workspace:
-          root: .
-          paths: .
-  lint:
-      <<: *defaults
-      steps:
-        - attach_workspace:
-            at: ~/project
-        - run: |
-            yarn lint
-  typescript:
-      <<: *defaults
-      steps:
-        - attach_workspace:
-            at: ~/project
-        - run: yarn typescript
-  unit-tests:
-      <<: *defaults
-      steps:
-        - attach_workspace:
-            at: ~/project
-        - run: yarn test --coverage
-        - store_artifacts:
-            path: coverage
-            destination: coverage
-  build-package:
-      <<: *defaults
-      steps:
-        - attach_workspace:
-            at: ~/project
-        - run: yarn prepare
-
-
+      - node/with-cache:
+          steps:
+            - run: npm install
+            - run: npm run lint
+            - run: npm run typescript
 workflows:
-  version: 2
-  build-and-test:
-    jobs:
-      - install-dependencies
-      - lint:
-          requires:
-            - install-dependencies
-      - typescript:
-          requires:
-            - install-dependencies
-      - unit-tests:
-          requires:
-            - install-dependencies
-      - build-package:
-          requires:
-            - install-dependencies
+    build-and-test:
+      jobs:
+        - lint-and-ts
+        
