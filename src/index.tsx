@@ -518,6 +518,28 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           clockRunning(this.animationClock)
         ),
         [
+          this.didScrollUpAndPullDown,
+          this.setTranslationY,
+          set(this.tempDestSnapPoint, add(snapPoints[0], this.extraOffset)),
+          cond(not(this.isManuallySetValue), set(this.nextSnapIndex, 0)),
+          set(
+            this.destSnapPoint,
+            cond(
+              this.isManuallySetValue,
+              this.manualYOffset,
+              this.calculateNextSnapPoint()
+            )
+          ),
+          cond(this.isManuallySetValue, [
+            set(this.animationFinished, 0)
+          ]),
+          set(
+            this.lastSnap,
+            sub(
+              this.destSnapPoint,
+              cond(eq(this.scrollUpAndPullDown, 1), this.lastStartScrollY, 0)
+            )
+          ),
           runTiming({
             clock: this.animationClock,
             from: cond(
