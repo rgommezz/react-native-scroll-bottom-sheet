@@ -11,6 +11,7 @@ import {
   StyleSheet,
   View,
   ViewStyle,
+  ImageBackground,
 } from 'react-native';
 import Animated, {
   abs,
@@ -161,6 +162,12 @@ type CommonProps = {
    * Style to be applied to the container.
    */
   containerStyle?: Animated.AnimateStyle<ViewStyle>;
+
+  /* 
+  this props adds the possibily to use a static image in the contentContainer 
+  */
+
+  ContentContainerImageBackground?: any;
 };
 
 type Props<T> = CommonProps &
@@ -601,6 +608,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       onSettle,
       animatedPosition,
       containerStyle,
+      ContentContainerImageBackground,
       ...rest
     } = this.props;
     const AnimatedScrollableComponent = this.scrollComponent;
@@ -634,28 +642,36 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           onGestureEvent={this.onDrawerGestureEvent}
           onHandlerStateChange={this.onDrawerGestureEvent}
         >
-          <Animated.View style={styles.container}>
-            <NativeViewGestureHandler
-              ref={this.scrollComponentRef}
-              waitFor={this.masterDrawer}
-              simultaneousHandlers={this.drawerContentRef}
-            >
-              <AnimatedScrollableComponent
-                overScrollMode="never"
-                bounces={false}
-                {...rest}
-                ref={this.props.innerRef}
-                // @ts-ignore
-                decelerationRate={this.decelerationRate}
-                onScrollBeginDrag={this.onScrollBeginDrag}
-                scrollEventThrottle={1}
-                contentContainerStyle={[
-                  rest.contentContainerStyle,
-                  { paddingBottom: this.getNormalisedSnapPoints()[0] },
-                ]}
-              />
-            </NativeViewGestureHandler>
-          </Animated.View>
+          <ImageBackground
+            source={ContentContainerImageBackground}
+            style={StyleSheet.flatten([
+              styles.image,
+              !ContentContainerImageBackground && { backgroundColor: 'grey' },
+            ])}
+          >
+            <Animated.View style={styles.container}>
+              <NativeViewGestureHandler
+                ref={this.scrollComponentRef}
+                waitFor={this.masterDrawer}
+                simultaneousHandlers={this.drawerContentRef}
+              >
+                <AnimatedScrollableComponent
+                  overScrollMode="never"
+                  bounces={false}
+                  {...rest}
+                  ref={this.props.innerRef}
+                  // @ts-ignore
+                  decelerationRate={this.decelerationRate}
+                  onScrollBeginDrag={this.onScrollBeginDrag}
+                  scrollEventThrottle={1}
+                  contentContainerStyle={[
+                    rest.contentContainerStyle,
+                    { paddingBottom: this.getNormalisedSnapPoints()[0] },
+                  ]}
+                />
+              </NativeViewGestureHandler>
+            </Animated.View>
+          </ImageBackground>
         </PanGestureHandler>
         {this.props.animatedPosition && (
           <Animated.Code
