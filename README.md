@@ -208,7 +208,7 @@ const OrientationAwareBS = () => {
 
 	return (
       <ScrollBottomSheet
- 		    key={orientation}
+ 		key={orientation}
         componentType="FlatList"
         snapPoints={snapPoints[orientation]}
         initialSnapIndex={2}
