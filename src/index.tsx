@@ -695,8 +695,16 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                   const { method, args } = imperativeScrollOptions[
                     this.props.componentType
                   ];
-                  // @ts-ignore
-                  this.props.innerRef.current?.getNode()[method](args);
+                  if (
+                    (this.props.componentType === 'FlatList' &&
+                      (this.props?.data?.length || 0) > 0) ||
+                    (this.props.componentType === 'SectionList' &&
+                      this.props.sections.length > 0) ||
+                    this.props.componentType === 'ScrollView'
+                  ) {
+                    // @ts-ignore
+                    this.props.innerRef.current?.getNode()[method](args);
+                  }
                 })
               ),
               set(this.dragY, 0),
