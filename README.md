@@ -183,6 +183,41 @@ bottomSheetRef.current.snapTo(0)
 
 `bottomSheetRef` refers to the [`ref`](https://reactjs.org/docs/react-api.html#reactcreateref) passed to the `ScrollBottomSheet` component.
 
+## Limitations
+At the moment, the component does not support updating snap points via state, something you may want to achieve when changing device orientation for instance. A temporary workaround is to leverage React keys to force a re-mount of the component. This is some illustrative code to give you an idea how you could handle an orientation change with keys:
+
+```js
+import { useDimensions } from '@react-native-community/hooks'
+
+const useOrientation = () => {
+  const { width, height } = useDimensions().window;
+  
+  if (height > width) {
+    return 'portrait'
+  }
+  
+  return 'landscape'
+}
+
+const OrientationAwareBS = () => {
+	const orientation = useOrientation();
+	const snapPoints = {
+		portrait: [...],
+		landscape: [...]
+	}
+
+	return (
+      <ScrollBottomSheet
+ 		key={orientation}
+        componentType="FlatList"
+        snapPoints={snapPoints[orientation]}
+        initialSnapIndex={2}
+        ...
+      />
+	);
+}
+```
+
 ## Example
 There is an Expo example application that you can play with to get a good grasp on the different customisation options. In case of Android, you can directly open the project [here](https://expo.io/@rgommezz/react-native-scroll-bottom-sheet-example). For iOS, head to the [example folder](https://github.com/rgommezz/react-native-scroll-bottom-sheet/tree/master/example) and run the project locally:
 
