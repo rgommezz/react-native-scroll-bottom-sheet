@@ -2,10 +2,11 @@
   "name": "react-native-scroll-bottom-sheet",
   "version": "0.6.2",
   "description": "Cross platform scrollable bottom sheet with virtualization support, running at 60 FPS and fully implemented in JS land",
-  "main": "lib/commonjs/index.js",
-  "module": "lib/module/index.js",
+  "main": "lib/commonjs/index",
+  "module": "lib/module/index",
   "types": "lib/typescript/index.d.ts",
-  "react-native": "src/index.tsx",
+  "react-native": "src/index",
+  "source": "src/index",
   "files": [
     "src",
     "lib"
@@ -13,7 +14,7 @@
   "scripts": {
     "test": "jest",
     "typescript": "tsc --noEmit",
-    "lint": "eslint --ext .js,.ts,.tsx .",
+    "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "prepare": "bob build",
     "release": "release-it",
     "example": "yarn --cwd example"
