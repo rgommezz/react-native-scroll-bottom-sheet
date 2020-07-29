@@ -15,7 +15,7 @@
     "test": "jest",
     "typescript": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "prepare": "bob build",
+    "build": "bob build",
     "release": "release-it",
     "example": "yarn --cwd example"
   },
@@ -134,6 +134,7 @@
     ]
   },
   "dependencies": {
+    "react-native-redash": "^14.2.3",
     "utility-types": "^3.10.0"
   }
 }

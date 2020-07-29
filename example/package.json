@@ -12,6 +12,8 @@
     "@react-native-community/masked-view": "0.1.6",
     "@react-navigation/native": "^5.3.2",
     "@react-navigation/stack": "^5.3.5",
+    "date-fns": "^2.15.0",
+    "faker": "^4.1.0",
     "react": "16.11.0",
     "react-native": "0.62.2",
     "react-native-gesture-handler": "^1.6.1",
@@ -23,6 +25,7 @@
   "devDependencies": {
     "@babel/core": "^7.9.6",
     "@babel/runtime": "^7.9.6",
+    "@types/faker": "^4.1.12",
     "@types/react": "~16.9.23",
     "@types/react-native": "~0.61.17",
     "babel-plugin-module-resolver": "^4.0.0",
