@@ -7,7 +7,7 @@ import {
 } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 
-interface ScrollBottomSheetContextType {
+export interface ScrollBottomSheetContextType {
   innerRef?: RefObject<any>;
   scrollComponentRef?: RefObject<NativeViewGestureHandler>;
   drawerContentRef?: RefObject<PanGestureHandler>;

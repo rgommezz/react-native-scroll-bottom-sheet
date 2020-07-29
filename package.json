@@ -15,7 +15,7 @@
     "test": "jest",
     "typescript": "tsc --noEmit",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
-    "build": "bob build",
+    "prepare": "bob build",
     "release": "release-it",
     "example": "yarn --cwd example"
   },
