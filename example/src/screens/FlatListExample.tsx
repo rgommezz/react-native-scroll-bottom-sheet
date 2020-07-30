@@ -1,23 +1,31 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React, { useCallback, useMemo, useRef } from 'react';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/stack';
 import ScrollBottomSheet, { FlatList } from 'react-native-scroll-bottom-sheet';
 import { useSafeArea } from 'react-native-safe-area-context';
+import Handle from '../components/Handle';
+import Button from '../components/button';
+import ContactItem from '../components/contactItem';
+import { createContactListMockData } from '../utils';
 
 const windowHeight = Dimensions.get('window').height;
 
-const data = Array.from({ length: 20 }).map((_, i) => String(i));
-
 const FlatListExample = () => {
   // hooks
-  const { top: topSafeArea, bottom: bottomSafeArea } = useSafeArea();
+  const sheetRef = useRef<ScrollBottomSheet>(null);
+  const { bottom: bottomSafeArea } = useSafeArea();
+  const headerHeight = useHeaderHeight();
 
   // variables
-  const snapPointsFromTop = useMemo(
-    () => [topSafeArea, '50%', windowHeight - 264],
-    [topSafeArea]
-  );
+  const snapPoints = useMemo(() => ['10%', '50%', '80%'], []);
 
   // styles
+  const sheetContainerStyle = useMemo(
+    () => ({
+      height: windowHeight - bottomSafeArea - headerHeight,
+    }),
+    [bottomSafeArea, headerHeight]
+  );
   const contentContainerStyle = useMemo(
     () => ({
       ...styles.contentContainerStyle,
@@ -26,33 +34,45 @@ const FlatListExample = () => {
     [bottomSafeArea]
   );
 
+  // callbacks
+  const handleSnapPress = useCallback(index => {
+    sheetRef.current?.snapTo(index);
+  }, []);
+
   // renders
-  const renderHandle = useCallback(
-    () => (
-      <View style={styles.header}>
-        <View style={styles.panelHandle} />
-      </View>
-    ),
-    []
-  );
+  const renderHandle = useCallback(() => <Handle />, []);
   const renderItem = useCallback(
-    ({ item }) => (
-      <View style={styles.item}>
-        <Text>{`Item ${item}`}</Text>
-      </View>
-    ),
+    ({ item }) => <ContactItem title={item.name} subTitle={item.jobTitle} />,
     []
   );
   return (
     <View style={styles.container}>
+      <Button
+        label="Extend"
+        style={styles.buttonContainer}
+        onPress={() => handleSnapPress(0)}
+      />
+      <Button
+        label="Open"
+        style={styles.buttonContainer}
+        onPress={() => handleSnapPress(1)}
+      />
+      <Button
+        label="Close"
+        style={styles.buttonContainer}
+        onPress={() => handleSnapPress(2)}
+      />
       <ScrollBottomSheet
-        snapPoints={snapPointsFromTop}
+        ref={sheetRef}
+        snapPoints={snapPoints}
         initialSnapIndex={2}
+        topInset={headerHeight}
+        containerStyle={sheetContainerStyle}
         renderHandle={renderHandle}
       >
         <FlatList
-          data={data}
-          keyExtractor={i => i}
+          data={createContactListMockData()}
+          keyExtractor={i => i.name}
           renderItem={renderItem}
           contentContainerStyle={contentContainerStyle}
         />
@@ -64,32 +84,15 @@ const FlatListExample = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    padding: 24,
   },
-
   contentContainerStyle: {
-    padding: 16,
-    backgroundColor: '#F3F4F9',
-  },
-  header: {
-    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     backgroundColor: 'white',
-    paddingVertical: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
   },
-  panelHandle: {
-    width: 40,
-    height: 2,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 4,
-  },
-  item: {
-    padding: 20,
-    justifyContent: 'center',
-    backgroundColor: 'white',
-    alignItems: 'center',
-    marginVertical: 10,
+  buttonContainer: {
+    marginBottom: 6,
   },
 });
 

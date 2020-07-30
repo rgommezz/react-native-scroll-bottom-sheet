@@ -678,6 +678,11 @@
   dependencies:
     "@types/hammerjs" "^2.0.36"
 
+"@gorhom/showcase-template@^0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@gorhom/showcase-template/-/showcase-template-0.3.1.tgz#a44dfb51e49f5f4f606f5afa911ddfe70593bd53"
+  integrity sha512-3VK1KQpKn6wI6oIV5D2dFfQqDGzm0TIwzzwfzvskIV7LoAmATcDuoP/k49Sz7pjVVqWKoohVfE6Is+7dkQPaqw==
+
 "@hapi/address@2.x.x":
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/@hapi/address/-/address-2.1.4.tgz#5d67ed43f3fd41a69d4b9ff7b56e7c0d1d0a81e5"

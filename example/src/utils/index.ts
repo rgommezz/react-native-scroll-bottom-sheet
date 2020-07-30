@@ -60,3 +60,20 @@ export const createMockData = () => {
       title: format(parse(item.title, 'yyyy LL d', new Date()), 'ccc d MMM'),
     }));
 };
+
+export const createContactListMockData = () => {
+  return new Array(50).fill(0).map(() => ({
+    name: `${Faker.name.firstName()} ${Faker.name.lastName()}`,
+    jobTitle: Faker.name.jobTitle(),
+  }));
+};
+
+export const createContactSectionsMockData = () => {
+  return new Array(10).fill(0).map(() => ({
+    title: Faker.name.jobTitle(),
+    data: new Array(10).fill(0).map(() => ({
+      name: `${Faker.name.firstName()} ${Faker.name.lastName()}`,
+      address: `${Faker.address.city()}, ${Faker.address.country()}`,
+    })),
+  }));
+};

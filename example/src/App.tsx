@@ -1,25 +1,22 @@
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import HomeScreen from './screens/Home';
+import RootScreen from './screens/Root';
 import FlatListExampleScreen from './screens/FlatListExample';
 import SectionListExampleScreen from './screens/SectionListExample';
 import ScrollViewExampleScreen from './screens/ScrollViewExample';
+import { AppStackParamsList } from './types';
 
-export type HomeStackParamsList = {
-  Home: undefined;
-  FlatListExample: undefined;
-  SectionListExample: undefined;
-  ScrollViewExample: undefined;
-};
-
-const Stack = createStackNavigator<HomeStackParamsList>();
-
+const Stack = createStackNavigator<AppStackParamsList>();
 function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Home" headerMode="none">
-        <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Navigator initialRouteName="Root">
+        <Stack.Screen
+          name="Root"
+          component={RootScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="FlatListExample"
           component={FlatListExampleScreen}
