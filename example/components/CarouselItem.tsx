@@ -1,8 +1,15 @@
+/**
+ * Copyright (c) 2020 Raul Gomez Acuna
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import * as React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
-import { Card, Paragraph, Title } from 'react-native-paper';
+import { Card } from 'react-native-paper';
 import { generateRandomIntFromInterval } from '../utils';
-import Faker from 'faker';
 
 const { width: windowWidth } = Dimensions.get('window');
 
