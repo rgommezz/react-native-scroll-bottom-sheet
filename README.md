@@ -40,7 +40,7 @@ yarn add react-native-scroll-bottom-sheet
 
 If you don't use Expo, you also need to install [react-native-gesture-handler](https://github.com/software-mansion/react-native-gesture-handler) and [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated) libraries along with this one.
 
-It's recommended you install a version of gesture handler equal or higher than `1.6.0`, and for reanimated, equal or higher than `1.7.0`. Otherwise you may run into unexpected errors.
+It's recommended you install a version of gesture handler equal or higher than `1.6.0`, and for reanimated, equal or higher than `1.7.0`. Otherwise you may run into unexpected errors. This library is also compatible with reanimated 2.x, starting with `react-native-reanimated: 2.0.0-alpha.4`.
 
 ## Compatibility table
 You may add some touchable components inside the bottom sheet or several `FlatList` widgets for horizontal mode. Unfortunately, not all _interactable_ React Native components are compatible with this library. This is due to some limitations on `react-native-gesture-handler`, which this library uses behind the scenes. For that, please follow this compatibility table:
