@@ -1,6 +1,6 @@
 {
   "name": "react-native-scroll-bottom-sheet",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Cross platform scrollable bottom sheet with virtualization support, running at 60 FPS and fully implemented in JS land",
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
@@ -82,17 +82,23 @@
       "@react-native-community",
       "prettier"
     ],
-    "plugins": ["header"],
+    "plugins": [
+      "header"
+    ],
     "rules": {
-      "header/header": [2, "block", [
-        "*",
-        " * Copyright (c) 2020 Raul Gomez Acuna",
-        " *",
-        " * This source code is licensed under the MIT license found in the",
-        " * LICENSE file in the root directory of this source tree.",
-        " *",
-        " "
-      ]],
+      "header/header": [
+        2,
+        "block",
+        [
+          "*",
+          " * Copyright (c) 2020 Raul Gomez Acuna",
+          " *",
+          " * This source code is licensed under the MIT license found in the",
+          " * LICENSE file in the root directory of this source tree.",
+          " *",
+          " "
+        ]
+      ],
       "@typescript-eslint/no-unused-vars": "off",
       "prettier/prettier": [
         "error",
