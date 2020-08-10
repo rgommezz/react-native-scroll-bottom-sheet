@@ -16,8 +16,9 @@
 
 ### Your Environment
 
-| package                           | version
+|                                   | version
 | ----------------                  | -------
+| Platform (Android, iOS or both)   |
 | react-native-scroll-bottom-sheet  |
 | react-native                      |
 | react-native-gesture-handler      |
