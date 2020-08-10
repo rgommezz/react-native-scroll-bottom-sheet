@@ -28,13 +28,14 @@ import Animated, {
   Clock,
   clockRunning,
   cond,
-  Easing,
+  Easing as EasingDeprecated,
+  // @ts-ignore: this property is only present in Reanimated 2
+  EasingNode,
   eq,
   event,
   Extrapolate,
   greaterOrEq,
   greaterThan,
-  interpolate,
   multiply,
   not,
   onChange,
@@ -54,6 +55,17 @@ import {
   TapGestureHandler,
 } from 'react-native-gesture-handler';
 import { Assign } from 'utility-types';
+
+const {
+  interpolate: interpolateDeprecated,
+  // @ts-ignore: this property is only present in Reanimated 2
+  interpolateNode,
+} = Animated;
+
+const interpolate: typeof interpolateDeprecated =
+  interpolateNode ?? interpolateDeprecated;
+
+const Easing: typeof EasingDeprecated = EasingNode ?? EasingDeprecated;
 
 const FlatListComponentType = 'FlatList' as const;
 const ScrollViewComponentType = 'ScrollView' as const;
