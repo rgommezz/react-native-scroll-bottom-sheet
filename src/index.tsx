@@ -215,7 +215,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   };
 
   private animationType =
-    this.props.animationType === 'spring' ? AnimationType.Spring : AnimationType.Timing;
+    this.props.animationType === 'spring'
+      ? AnimationType.Spring
+      : AnimationType.Timing;
   /**
    * Gesture Handler references
    */
@@ -362,7 +364,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         eq(handleGestureState, GestureState.BEGAN),
         eq(handleGestureState, GestureState.ACTIVE),
         eq(drawerGestureState, GestureState.BEGAN),
-        eq(drawerGestureState, GestureState.ACTIVE),
+        eq(drawerGestureState, GestureState.ACTIVE)
       ),
       clockRunning(this.animationClock)
     );
@@ -506,9 +508,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           startClock(clock),
         ]),
         // We run the step here that is going to update position
-        cond(eq(this.animationType, AnimationType.Timing),
+        cond(
+          eq(this.animationType, AnimationType.Timing),
           timing(clock, state, timingParams),
-          spring(clock, state, springParams),
+          spring(clock, state, springParams)
         ),
         cond(
           state.finished,
@@ -595,7 +598,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           // @ts-ignore
           this.prevTranslateYOffset,
         ]
-      ),
+      )
     );
 
     this.translateY = interpolate(
@@ -758,13 +761,11 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
                   if (
                     node[method] &&
-                    (
-                      (this.props.componentType === 'FlatList' &&
-                        (this.props?.data?.length || 0) > 0) ||
+                    ((this.props.componentType === 'FlatList' &&
+                      (this.props?.data?.length || 0) > 0) ||
                       (this.props.componentType === 'SectionList' &&
                         this.props.sections.length > 0) ||
-                      this.props.componentType === 'ScrollView'
-                    )
+                      this.props.componentType === 'ScrollView')
                   ) {
                     node[method](args);
                   }
