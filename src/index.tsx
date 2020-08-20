@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) 2020 Raul Gomez Acuna
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *
+ */
+
 import React, { Component, RefObject } from 'react';
 import {
   Dimensions,
@@ -20,6 +28,7 @@ import Animated, {
   Clock,
   clockRunning,
   cond,
+  Easing,
   eq,
   event,
   Extrapolate,
@@ -35,6 +44,7 @@ import Animated, {
   stopClock,
   sub,
   spring,
+  timing,
   Value,
 } from 'react-native-reanimated';
 import {
@@ -54,6 +64,8 @@ const { height: windowHeight } = Dimensions.get('window');
 const DRAG_TOSS = 0.4;
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
+const DEFAULT_ANIMATION_DURATION = 250;
+const DEFAULT_EASING = Easing.inOut(Easing.linear);
 const imperativeScrollOptions = {
   [FlatListComponentType]: {
     method: 'scrollToIndex',
@@ -99,14 +111,29 @@ type SectionListOption<T> = Assign<
   SectionListProps<T>
 >;
 
-interface SpringParams {
+interface AnimationParams {
   clock: Animated.Clock;
   from: Animated.Node<number>;
   to: Animated.Node<number>;
   position: Animated.Value<number>;
   finished: Animated.Value<number>;
+  frameTime: Animated.Value<number>;
   velocity: Animated.Node<number>;
 }
+
+export enum AnimationType {
+  Timing,
+  Spring,
+}
+
+const DEFAULT_SPRING_PARAMS = {
+  damping: 50,
+  mass: 0.3,
+  stiffness: 121.6,
+  overshootClamping: true,
+  restSpeedThreshold: 0.3,
+  restDisplacementThreshold: 0.3,
+};
 
 type CommonProps = {
   /**
@@ -159,6 +186,12 @@ type CommonProps = {
    * Allow drawer to be dragged beyond lowest snappoint
    */
   enableOverScroll?: boolean;
+  /*
+   *
+   */
+  animationType: AnimationType;
+  springConfig?: Animated.SpringConfig;
+  timingConfig?: Animated.TimingConfig;
 };
 
 type Props<T> = CommonProps &
@@ -166,6 +199,7 @@ type Props<T> = CommonProps &
 
 export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   static defaultProps = {
+    animationType: AnimationType.Spring,
     topInset: 0,
     innerRef: React.createRef<AnimatedScrollableComponent>(),
   };
@@ -246,7 +280,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
   constructor(props: Props<T>) {
     super(props);
-    const { initialSnapIndex } = props;
+    const { initialSnapIndex, timingConfig } = props;
+    const animationDuration =
+      timingConfig?.duration || DEFAULT_ANIMATION_DURATION;
 
     const ScrollComponent = this.getScrollComponent();
     // @ts-ignore
@@ -254,7 +290,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const snapPoints = this.getNormalisedSnapPoints();
     const openPosition = snapPoints[0];
-    const closedPosition = this.props.enableOverScroll ? windowHeight : snapPoints[snapPoints.length - 1];
+    const closedPosition = this.props.enableOverScroll
+      ? windowHeight
+      : snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
     this.nextSnapIndex = new Value(initialSnapIndex);
 
@@ -414,29 +452,31 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             this.calculateNextSnapPoint(i + 1)
           );
 
-    const runSpring = ({
+    const runAnimation = ({
       clock,
       from,
       to,
       position,
       finished,
       velocity,
-    }: SpringParams) => {
+      frameTime,
+    }: AnimationParams) => {
       const state = {
         finished,
         velocity: new Value(0),
         position,
         time: new Value(0),
+        frameTime,
       };
 
-      const config = {
-        damping: 50,
-        mass: 0.3,
-        stiffness: 121.6,
-        overshootClamping: true,
-        restSpeedThreshold: 0.3,
-        restDisplacementThreshold: 0.3,
-        ...this.props.animationConfig,
+      const timingParams = {
+        duration: animationDuration,
+        easing: timingConfig?.easing || DEFAULT_EASING,
+        toValue: new Value(0),
+      };
+
+      const springParams = {
+        ...(props.springConfig || DEFAULT_SPRING_PARAMS),
         toValue: new Value(0),
       };
 
@@ -447,11 +487,16 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           set(state.velocity, velocity),
           set(state.time, 0),
           set(state.position, from),
-          set(config.toValue, to),
+          set(state.frameTime, 0),
+          set(timingParams.toValue, to),
+          set(springParams.toValue, to),
           startClock(clock),
         ]),
         // We run the step here that is going to update position
-        spring(clock, state, config),
+        cond(eq(props.animationType, AnimationType.Timing), [
+          timing(clock, state, timingParams),
+          spring(clock, state, springParams),
+        ]),
         cond(
           state.finished,
           [
@@ -464,6 +509,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             // Resetting appropriate values
             set(drawerOldGestureState, GestureState.END),
             set(handleOldGestureState, GestureState.END),
+            set(this.animationFrameTime, add(animationDuration, 1000)),
             set(this.prevTranslateYOffset, state.position),
             cond(eq(this.scrollUpAndPullDown, 1), [
               set(
@@ -516,7 +562,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             clockRunning(this.animationClock)
           ),
           [
-            runSpring({
+            runAnimation({
               clock: this.animationClock,
               from: cond(
                 this.isManuallySetValue,
@@ -526,6 +572,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               to: this.destSnapPoint,
               position: this.animationPosition,
               finished: this.animationFinished,
+              frameTime: this.animationFrameTime,
               velocity: this.velocityY,
             }),
           ],
