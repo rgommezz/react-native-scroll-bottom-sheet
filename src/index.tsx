@@ -123,7 +123,7 @@ type SectionListOption<T> = Assign<
   SectionListProps<T>
 >;
 
-interface AnimationParams {
+interface TimingParams {
   clock: Animated.Clock;
   from: Animated.Node<number>;
   to: Animated.Node<number>;
@@ -176,7 +176,7 @@ type CommonProps = {
    */
   animatedPosition?: Animated.Value<number>;
   /**
-   * Configuration for the spring reanimated function
+   * Configuration for the timing or spring reanimated function
    */
   animationConfig?: Animated.SpringConfig & Animated.TimingConfig;
   /**
@@ -475,7 +475,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       finished,
       velocity,
       frameTime,
-    }: AnimationParams) => {
+    }: TimingParams) => {
       const state = {
         finished,
         velocity: new Value(0),
