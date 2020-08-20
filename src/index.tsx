@@ -611,7 +611,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     );
 
     this.position = interpolate(this.translateY, {
-      inputRange: [openPosition, closedPosition],
+      inputRange: [openPosition, snapPoints[snapPoints.length - 1]],
       outputRange: [1, 0],
       extrapolate: Extrapolate.CLAMP,
     });
