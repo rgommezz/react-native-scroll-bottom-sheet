@@ -360,14 +360,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const isAnimationInterrupted = and(
       or(
         eq(handleGestureState, GestureState.BEGAN),
+        eq(handleGestureState, GestureState.ACTIVE),
         eq(drawerGestureState, GestureState.BEGAN),
-        cond(not(this.isAndroid), [
-          or(
-            eq(handleGestureState, GestureState.ACTIVE),
-            eq(drawerGestureState, GestureState.ACTIVE),
-          ),
-          0,
-        ])
+        eq(drawerGestureState, GestureState.ACTIVE),
       ),
       clockRunning(this.animationClock)
     );
@@ -511,10 +506,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           startClock(clock),
         ]),
         // We run the step here that is going to update position
-        cond(eq(this.animationType, AnimationType.Timing), [
+        cond(eq(this.animationType, AnimationType.Timing),
           timing(clock, state, timingParams),
           spring(clock, state, springParams),
-        ]),
+        ),
         cond(
           state.finished,
           [
@@ -758,17 +753,20 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                   const { method, args } = imperativeScrollOptions[
                     this.props.componentType
                   ];
+                  // @ts-ignore
+                  const node = this.props.innerRef.current?.getNode();
+
                   if (
-                    // @ts-ignore
-                    typeof this.props.innerRef.current?.getNode()[method] === "function" &&
-                    (this.props.componentType === 'FlatList' &&
-                      (this.props?.data?.length || 0) > 0) ||
-                    (this.props.componentType === 'SectionList' &&
-                      this.props.sections.length > 0) ||
-                    this.props.componentType === 'ScrollView'
+                    node[method] &&
+                    (
+                      (this.props.componentType === 'FlatList' &&
+                        (this.props?.data?.length || 0) > 0) ||
+                      (this.props.componentType === 'SectionList' &&
+                        this.props.sections.length > 0) ||
+                      this.props.componentType === 'ScrollView'
+                    )
                   ) {
-                    // @ts-ignore
-                    this.props.innerRef.current?.getNode()[method](args);
+                    node[method](args);
                   }
                 })
               ),
