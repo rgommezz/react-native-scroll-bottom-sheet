@@ -155,6 +155,10 @@ type CommonProps = {
    * Style to be applied to the container.
    */
   containerStyle?: Animated.AnimateStyle<ViewStyle>;
+  /*
+   * Allow drawer to be dragged beyond lowest snappoint
+   */
+  enableOverScroll?: boolean;
 };
 
 type Props<T> = CommonProps &
@@ -250,7 +254,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const snapPoints = this.getNormalisedSnapPoints();
     const openPosition = snapPoints[0];
-    const closedPosition = windowHeight;
+    const closedPosition = this.props.enableOverScroll ? windowHeight : snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
     this.nextSnapIndex = new Value(initialSnapIndex);
 
