@@ -760,6 +760,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                   const node = this.props.innerRef.current?.getNode();
 
                   if (
+                    node &&
                     node[method] &&
                     ((this.props.componentType === 'FlatList' &&
                       (this.props?.data?.length || 0) > 0) ||
