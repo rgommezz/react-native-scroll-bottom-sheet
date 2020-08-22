@@ -358,7 +358,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const isAnimationInterrupted = and(
       or(
         eq(handleGestureState, GestureState.BEGAN),
-        eq(drawerGestureState, GestureState.BEGAN)
+        eq(drawerGestureState, GestureState.BEGAN),
+        eq(handleGestureState, GestureState.ACTIVE),
+        eq(drawerGestureState, GestureState.ACTIVE)
       ),
       clockRunning(this.animationClock)
     );
@@ -480,24 +482,19 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
       const animationDriver = animationType === 'timing' ? 0 : 1;
 
-      const timingAnimationParams = {
+      const timingConfig = {
         duration: animationDuration,
         easing:
           (props.animationType === 'timing' && props.animationConfig?.easing) ||
           DEFAULT_EASING,
+        toValue: new Value(0),
       };
 
-      const springAnimationParams = {
+      const springConfig = {
         ...((props.animationType === 'spring' && props.animationConfig) ||
           DEFAULT_SPRING_PARAMS),
         ...DEFAULT_SPRING_PARAMS,
-      };
-
-      const config = {
         toValue: new Value(0),
-        ...(animationType === 'timing'
-          ? timingAnimationParams
-          : springAnimationParams),
       };
 
       return [
@@ -508,14 +505,15 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           set(state.velocity, velocity),
           set(state.position, from),
           set(state.frameTime, 0),
-          set(config.toValue, to),
+          set(timingConfig.toValue, to),
+          set(springConfig.toValue, to),
           startClock(clock),
         ]),
         // We run the step here that is going to update position
         cond(
           eq(animationDriver, 0),
-          timing(clock, state, config as Animated.TimingConfig),
-          spring(clock, state, config as Animated.SpringConfig)
+          timing(clock, state, timingConfig),
+          spring(clock, state, springConfig)
         ),
         cond(
           state.finished,
