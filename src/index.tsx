@@ -41,6 +41,7 @@ import Animated, {
   onChange,
   or,
   set,
+  spring,
   startClock,
   stopClock,
   sub,
@@ -70,6 +71,17 @@ const Easing: typeof EasingDeprecated = EasingNode ?? EasingDeprecated;
 const FlatListComponentType = 'FlatList' as const;
 const ScrollViewComponentType = 'ScrollView' as const;
 const SectionListComponentType = 'SectionList' as const;
+const TimingAnimationType = 'timing' as const;
+const SpringAnimationType = 'spring' as const;
+
+const DEFAULT_SPRING_PARAMS = {
+  damping: 50,
+  mass: 0.3,
+  stiffness: 121.6,
+  overshootClamping: true,
+  restSpeedThreshold: 0.3,
+  restDisplacementThreshold: 0.3,
+};
 
 const { height: windowHeight } = Dimensions.get('window');
 const DRAG_TOSS = 0.05;
@@ -129,6 +141,7 @@ interface TimingParams {
   position: Animated.Value<number>;
   finished: Animated.Value<number>;
   frameTime: Animated.Value<number>;
+  velocity: Animated.Value<number>;
 }
 
 type CommonProps = {
@@ -160,13 +173,6 @@ type CommonProps = {
    */
   animatedPosition?: Animated.Value<number>;
   /**
-   * Configuration for the timing reanimated function
-   */
-  animationConfig?: {
-    duration?: number;
-    easing?: Animated.EasingFunction;
-  };
-  /**
    * This value is useful if you want to take into consideration safe area insets
    * when applying percentages for snapping points. We recommend using react-native-safe-area-context
    * library for that.
@@ -183,12 +189,30 @@ type CommonProps = {
   containerStyle?: Animated.AnimateStyle<ViewStyle>;
 };
 
+type TimingAnimationProps = {
+  animationType: typeof TimingAnimationType;
+  /**
+   * Configuration for the timing reanimated function
+   */
+  animationConfig?: Partial<Animated.TimingConfig>;
+};
+
+type SpringAnimationProps = {
+  animationType: typeof SpringAnimationType;
+  /**
+   * Configuration for the spring reanimated function
+   */
+  animationConfig?: Partial<Animated.SpringConfig>;
+};
+
 type Props<T> = CommonProps &
-  (FlatListOption<T> | ScrollViewOption | SectionListOption<T>);
+  (FlatListOption<T> | ScrollViewOption | SectionListOption<T>) &
+  (TimingAnimationProps | SpringAnimationProps);
 
 export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   static defaultProps = {
     topInset: 0,
+    animationType: 'timing',
     innerRef: React.createRef<AnimatedScrollableComponent>(),
   };
   /**
@@ -268,9 +292,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
   constructor(props: Props<T>) {
     super(props);
-    const { initialSnapIndex, animationConfig } = props;
+    const { initialSnapIndex, animationType } = props;
     const animationDuration =
-      animationConfig?.duration || DEFAULT_ANIMATION_DURATION;
+      (props.animationType === 'timing' && props.animationConfig?.duration) ||
+      DEFAULT_ANIMATION_DURATION;
 
     const ScrollComponent = this.getScrollComponent();
     // @ts-ignore
@@ -436,29 +461,43 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             this.calculateNextSnapPoint(i + 1)
           );
 
-    const runTiming = ({
+    const runAnimation = ({
       clock,
       from,
       to,
       position,
       finished,
       frameTime,
+      velocity,
     }: TimingParams) => {
       const state = {
         finished,
         position,
         time: new Value(0),
+        velocity: new Value(0),
         frameTime,
       };
 
-      const animationParams = {
+      const animationDriver = animationType === 'timing' ? 0 : 1;
+
+      const timingAnimationParams = {
         duration: animationDuration,
-        easing: animationConfig?.easing || DEFAULT_EASING,
+        easing:
+          (props.animationType === 'timing' && props.animationConfig?.easing) ||
+          DEFAULT_EASING,
+      };
+
+      const springAnimationParams = {
+        ...((props.animationType === 'spring' && props.animationConfig) ||
+          DEFAULT_SPRING_PARAMS),
+        ...DEFAULT_SPRING_PARAMS,
       };
 
       const config = {
         toValue: new Value(0),
-        ...animationParams,
+        ...(animationType === 'timing'
+          ? timingAnimationParams
+          : springAnimationParams),
       };
 
       return [
@@ -466,13 +505,18 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           // If the clock isn't running, we reset all the animation params and start the clock
           set(state.finished, 0),
           set(state.time, 0),
+          set(state.velocity, velocity),
           set(state.position, from),
           set(state.frameTime, 0),
           set(config.toValue, to),
           startClock(clock),
         ]),
         // We run the step here that is going to update position
-        timing(clock, state, config),
+        cond(
+          eq(animationDriver, 0),
+          timing(clock, state, config as Animated.TimingConfig),
+          spring(clock, state, config as Animated.SpringConfig)
+        ),
         cond(
           state.finished,
           [
@@ -528,6 +572,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         set(handleOldGestureState, GestureState.END),
         // By forcing that frameTime exceeds duration, it has the effect of stopping the animation
         set(this.animationFrameTime, add(animationDuration, 1000)),
+        set(this.velocityY, 0),
         stopClock(this.animationClock),
         this.prevTranslateYOffset,
       ],
@@ -538,7 +583,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           clockRunning(this.animationClock)
         ),
         [
-          runTiming({
+          runAnimation({
             clock: this.animationClock,
             from: cond(
               this.isManuallySetValue,
@@ -549,6 +594,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             position: this.animationPosition,
             finished: this.animationFinished,
             frameTime: this.animationFrameTime,
+            velocity: this.velocityY,
           }),
         ],
         [
