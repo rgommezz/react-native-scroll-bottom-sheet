@@ -71,9 +71,19 @@ const Easing: typeof EasingDeprecated = EasingNode ?? EasingDeprecated;
 const FlatListComponentType = 'FlatList' as const;
 const ScrollViewComponentType = 'ScrollView' as const;
 const SectionListComponentType = 'SectionList' as const;
+const TimingAnimationType = 'timing' as const;
+const SpringAnimationType = 'spring' as const;
+
+const DEFAULT_SPRING_PARAMS = {
+  damping: 50,
+  mass: 0.3,
+  stiffness: 121.6,
+  overshootClamping: true,
+  restSpeedThreshold: 0.3,
+  restDisplacementThreshold: 0.3,
+};
 
 const { height: windowHeight } = Dimensions.get('window');
-const DRAG_TOSS = 0.4;
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
 const DEFAULT_ANIMATION_DURATION = 250;
@@ -138,15 +148,6 @@ export enum AnimationType {
   Spring,
 }
 
-const DEFAULT_SPRING_PARAMS = {
-  damping: 50,
-  mass: 0.3,
-  stiffness: 121.6,
-  overshootClamping: true,
-  restSpeedThreshold: 0.3,
-  restDisplacementThreshold: 0.3,
-};
-
 type CommonProps = {
   /**
    * Array of numbers that indicate the different resting positions of the bottom sheet (in dp or %), starting from the top.
@@ -195,29 +196,45 @@ type CommonProps = {
    */
   containerStyle?: Animated.AnimateStyle<ViewStyle>;
   /*
-   * Allow drawer to be dragged beyond lowest snappoint
+   * Factor of resistance when the gesture is released. A value of 0 offers maximum
+   * acceleration, whereas 1 acts as the opposite. Defaults to 0.95
    */
-  enableOverScroll?: boolean;
+  friction: number;
   /*
-   * Specify which animation function should animation the drawer on release
+   * Allow drawer to be dragged beyond lowest snap point
    */
-  animationType: 'spring' | 'timing';
+  enableOverScroll: boolean;
+};
+
+type TimingAnimationProps = {
+  animationType: typeof TimingAnimationType;
+  /**
+   * Configuration for the timing reanimated function
+   */
+  animationConfig?: Partial<Animated.TimingConfig>;
+};
+
+type SpringAnimationProps = {
+  animationType: typeof SpringAnimationType;
+  /**
+   * Configuration for the spring reanimated function
+   */
+  animationConfig?: Partial<Animated.SpringConfig>;
 };
 
 type Props<T> = CommonProps &
-  (FlatListOption<T> | ScrollViewOption | SectionListOption<T>);
+  (FlatListOption<T> | ScrollViewOption | SectionListOption<T>) &
+  (TimingAnimationProps | SpringAnimationProps);
 
 export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   static defaultProps = {
-    animationType: 'spring',
     topInset: 0,
+    friction: 0.95,
+    animationType: 'timing',
     innerRef: React.createRef<AnimatedScrollableComponent>(),
+    enableOverScroll: false,
   };
 
-  private animationType =
-    this.props.animationType === 'spring'
-      ? AnimationType.Spring
-      : AnimationType.Timing;
   /**
    * Gesture Handler references
    */
@@ -295,9 +312,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
   constructor(props: Props<T>) {
     super(props);
-    const { initialSnapIndex, animationConfig } = props;
+    const { initialSnapIndex, animationType } = props;
     const animationDuration =
-      animationConfig?.duration || DEFAULT_ANIMATION_DURATION;
+      (props.animationType === 'timing' && props.animationConfig?.duration) ||
+      DEFAULT_ANIMATION_DURATION;
 
     const ScrollComponent = this.getScrollComponent();
     // @ts-ignore
@@ -448,7 +466,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const endOffsetY = add(
       this.lastSnap,
       this.translationY,
-      multiply(DRAG_TOSS, this.velocityY)
+      multiply(1 - props.friction, this.velocityY)
     );
 
     this.calculateNextSnapPoint = (i = 0): Animated.Node<number> | number =>
@@ -484,14 +502,18 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         frameTime,
       };
 
-      const timingParams = {
+      const animationDriver = animationType === 'timing' ? 0 : 1;
+
+      const timingConfig = {
         duration: animationDuration,
-        easing: animationConfig?.easing || DEFAULT_EASING,
+        easing:
+          (props.animationType === 'timing' && props.animationConfig?.easing) ||
+          DEFAULT_EASING,
         toValue: new Value(0),
       };
 
-      const springParams = {
-        ...(animationConfig || DEFAULT_SPRING_PARAMS),
+      const springConfig = {
+        ...((props.animationType === 'spring' && props.animationConfig) || DEFAULT_SPRING_PARAMS),
         toValue: new Value(0),
       };
 
@@ -503,15 +525,15 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           set(state.time, 0),
           set(state.position, from),
           set(state.frameTime, 0),
-          set(timingParams.toValue, to),
-          set(springParams.toValue, to),
+          set(timingConfig.toValue, to),
+          set(springConfig.toValue, to),
           startClock(clock),
         ]),
         // We run the step here that is going to update position
         cond(
-          eq(this.animationType, AnimationType.Timing),
-          timing(clock, state, timingParams),
-          spring(clock, state, springParams)
+          eq(animationDriver, 0),
+          timing(clock, state, timingConfig),
+          spring(clock, state, springConfig)
         ),
         cond(
           state.finished,
@@ -568,6 +590,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         set(handleOldGestureState, GestureState.END),
         // By forcing that frameTime exceeds duration, it has the effect of stopping the animation
         set(this.animationFrameTime, add(animationDuration, 1000)),
+        set(this.velocityY, 0),
         stopClock(this.animationClock),
         this.prevTranslateYOffset,
       ],
