@@ -83,10 +83,6 @@ const DEFAULT_SPRING_PARAMS = {
   restDisplacementThreshold: 0.3,
 };
 
-// TODO
-// Spring interruption bug: BS closed position half scrolled, pull it up completely open and immediately pull it down via content. It should scroll and not close. Handle that
-// Overscroll prop
-
 const { height: windowHeight } = Dimensions.get('window');
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
@@ -195,6 +191,10 @@ type CommonProps = {
    * acceleration, whereas 1 acts as the opposite. Defaults to 0.95
    */
   friction: number;
+  /*
+   * Allow drawer to be dragged beyond lowest snap point
+   */
+  enableOverScroll: boolean;
 };
 
 type TimingAnimationProps = {
@@ -223,6 +223,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     friction: 0.95,
     animationType: 'timing',
     innerRef: React.createRef<AnimatedScrollableComponent>(),
+    enableOverScroll: false,
   };
   /**
    * Gesture Handler references
@@ -312,12 +313,11 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const snapPoints = this.getNormalisedSnapPoints();
     const openPosition = snapPoints[0];
-    const closedPosition = snapPoints[snapPoints.length - 1];
+    const closedPosition = this.props.enableOverScroll
+      ? windowHeight
+      : snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
     this.nextSnapIndex = new Value(initialSnapIndex);
-    const isAnimationSpring = new Value(
-      props.animationType === 'spring' ? 1 : 0
-    );
 
     const initialDecelerationRate = Platform.select({
       android:
@@ -370,9 +370,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const isAnimationInterrupted = and(
       or(
         eq(handleGestureState, GestureState.BEGAN),
-        eq(drawerGestureState, GestureState.BEGAN),
-        and(isAnimationSpring, eq(handleGestureState, GestureState.ACTIVE)),
-        and(isAnimationSpring, eq(drawerGestureState, GestureState.ACTIVE))
+        eq(drawerGestureState, GestureState.BEGAN)
       ),
       clockRunning(this.animationClock)
     );
@@ -626,7 +624,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     );
 
     this.position = interpolate(this.translateY, {
-      inputRange: [openPosition, closedPosition],
+      inputRange: [openPosition, snapPoints[snapPoints.length - 1]],
       outputRange: [1, 0],
       extrapolate: Extrapolate.CLAMP,
     });
