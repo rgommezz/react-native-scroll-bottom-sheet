@@ -83,8 +83,11 @@ const DEFAULT_SPRING_PARAMS = {
   restDisplacementThreshold: 0.3,
 };
 
+// TODO
+// Spring interruption bug: BS closed position half scrolled, pull it up completely open and immediately pull it down via content. It should scroll and not close. Handle that
+// Overscroll prop
+
 const { height: windowHeight } = Dimensions.get('window');
-const DRAG_TOSS = 0.05;
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
 const DEFAULT_ANIMATION_DURATION = 250;
@@ -187,6 +190,11 @@ type CommonProps = {
    * Style to be applied to the container.
    */
   containerStyle?: Animated.AnimateStyle<ViewStyle>;
+  /*
+   * Factor of resistance when the gesture is released. A value of 0 offers maximum
+   * acceleration, whereas 1 acts as the opposite. Defaults to 0.95
+   */
+  friction: number;
 };
 
 type TimingAnimationProps = {
@@ -212,6 +220,7 @@ type Props<T> = CommonProps &
 export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   static defaultProps = {
     topInset: 0,
+    friction: 0.95,
     animationType: 'timing',
     innerRef: React.createRef<AnimatedScrollableComponent>(),
   };
@@ -306,6 +315,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const closedPosition = snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
     this.nextSnapIndex = new Value(initialSnapIndex);
+    const isAnimationSpring = new Value(
+      props.animationType === 'spring' ? 1 : 0
+    );
 
     const initialDecelerationRate = Platform.select({
       android:
@@ -359,8 +371,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       or(
         eq(handleGestureState, GestureState.BEGAN),
         eq(drawerGestureState, GestureState.BEGAN),
-        eq(handleGestureState, GestureState.ACTIVE),
-        eq(drawerGestureState, GestureState.ACTIVE)
+        and(isAnimationSpring, eq(handleGestureState, GestureState.ACTIVE)),
+        and(isAnimationSpring, eq(drawerGestureState, GestureState.ACTIVE))
       ),
       clockRunning(this.animationClock)
     );
@@ -444,7 +456,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const endOffsetY = add(
       this.lastSnap,
       this.translationY,
-      multiply(DRAG_TOSS, this.velocityY)
+      multiply(1 - props.friction, this.velocityY)
     );
 
     this.calculateNextSnapPoint = (i = 0): Animated.Node<number> | number =>
