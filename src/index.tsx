@@ -313,6 +313,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   constructor(props: Props<T>) {
     super(props);
     const { initialSnapIndex, animationType } = props;
+
+    const animationDriver = animationType === 'timing' ? 0 : 1;
     const animationDuration =
       (props.animationType === 'timing' && props.animationConfig?.duration) ||
       DEFAULT_ANIMATION_DURATION;
@@ -380,9 +382,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const isAnimationInterrupted = and(
       or(
         eq(handleGestureState, GestureState.BEGAN),
-        eq(handleGestureState, GestureState.ACTIVE),
         eq(drawerGestureState, GestureState.BEGAN),
-        eq(drawerGestureState, GestureState.ACTIVE)
+        and(
+          eq(this.isAndroid, 0),
+          eq(animationDriver, 1),
+          or(eq(drawerGestureState, GestureState.ACTIVE), eq(handleGestureState, GestureState.ACTIVE))
+        )
       ),
       clockRunning(this.animationClock)
     );
@@ -501,8 +506,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         time: new Value(0),
         frameTime,
       };
-
-      const animationDriver = animationType === 'timing' ? 0 : 1;
 
       const timingConfig = {
         duration: animationDuration,
