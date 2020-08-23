@@ -161,12 +161,15 @@ This is the list of exclusive props that are meant to be used to customise the b
 | `snapPoints`                | yes      | `Array<string \| number>`       | Array of numbers and/or percentages that indicate the different resting positions of the bottom sheet (in dp or %), **starting from the top**. If a percentage is used, that would translate to the relative amount of the total window height. If you want that percentage to be calculated based on the parent available space instead, for example to account for safe areas or navigation bars, use it in combination with `topInset` prop |
 | `initialSnapIndex`          | yes      | `number`       | Index that references the initial resting position of the drawer, **starting from the top** |
 | `renderHandle`              | yes      |  `() => React.ReactNode`      | Render prop for the handle, should return a React Element |
+| `animationConfig`           | no       | `string`        | `timing` (default)  or `spring` |
 | `onSettle`                  | no       |  `(index: number) => void`       | Callback that is executed right after the bottom sheet settles in one of the snapping points. The new index is provided on the callback |
 | `animatedPosition`          | no       |  `Animated.Value<number>`       | Animated value that tracks the position of the drawer, being: 0 => closed, 1 => fully opened |
 | `animationConfig`           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 250ms and easing fn `Easing.inOut(Easing.linear)`  |
 | `topInset`                  | no       | `number`  | This value is useful to provide an offset (in dp) when applying percentages for snapping points |
 | `innerRef`                  | no       | `RefObject`  | Ref to the inner scrollable component (ScrollView, FlatList or SectionList), so that you can call its imperative methods. For instance, calling `scrollTo` on a ScrollView. In order to so, you have to use `getNode` as well, since it's wrapped into an _animated_ component: `ref.current.getNode().scrollTo({y: 0, animated: true})` |
 | `containerStyle`            | no       | `StyleProp<ViewStyle>`  | Style to be applied to the container (Handle and Content) |
+| `friction`                  | no       | `number`      | Factor of resistance when the gesture is released. A value of 0 offers maximum * acceleration, whereas 1 acts as the opposite. Defaults to 0.95 |
+| `enableOverScroll`          | yes      | `boolean`     | Allow drawer to be dragged beyond lowest snap point |
 
 
 ### Inherited
@@ -193,11 +196,11 @@ import { useDimensions } from '@react-native-community/hooks'
 
 const useOrientation = () => {
   const { width, height } = useDimensions().window;
-  
+
   if (height > width) {
     return 'portrait'
   }
-  
+
   return 'landscape'
 }
 
