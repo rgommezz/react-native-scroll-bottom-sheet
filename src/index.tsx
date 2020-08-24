@@ -143,11 +143,6 @@ interface TimingParams {
   velocity: Animated.Node<number>;
 }
 
-export enum AnimationType {
-  Timing,
-  Spring,
-}
-
 type CommonProps = {
   /**
    * Array of numbers that indicate the different resting positions of the bottom sheet (in dp or %), starting from the top.
@@ -176,10 +171,6 @@ type CommonProps = {
    * 1 => fully opened
    */
   animatedPosition?: Animated.Value<number>;
-  /**
-   * Configuration for the timing or spring reanimated function
-   */
-  animationConfig?: Animated.SpringConfig & Animated.TimingConfig;
   /**
    * This value is useful if you want to take into consideration safe area insets
    * when applying percentages for snapping points. We recommend using react-native-safe-area-context
@@ -516,7 +507,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
       };
 
       const springConfig = {
-        ...((props.animationType === 'spring' && props.animationConfig) || DEFAULT_SPRING_PARAMS),
+        ...DEFAULT_SPRING_PARAMS,
+        ...(props.animationType === 'spring' && props.animationConfig),
         toValue: new Value(0),
       };
 
