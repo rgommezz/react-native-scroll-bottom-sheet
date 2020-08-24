@@ -511,7 +511,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
       const springConfig = {
         ...DEFAULT_SPRING_PARAMS,
-        ...(props.animationType === 'spring' && props.animationConfig),
+        ...((props.animationType === 'spring' && props.animationConfig) || {}),
         toValue: new Value(0),
       };
 
