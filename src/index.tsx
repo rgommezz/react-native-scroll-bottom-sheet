@@ -44,6 +44,7 @@ import Animated, {
   startClock,
   stopClock,
   sub,
+  spring,
   timing,
   Value,
 } from 'react-native-reanimated';
@@ -70,9 +71,19 @@ const Easing: typeof EasingDeprecated = EasingNode ?? EasingDeprecated;
 const FlatListComponentType = 'FlatList' as const;
 const ScrollViewComponentType = 'ScrollView' as const;
 const SectionListComponentType = 'SectionList' as const;
+const TimingAnimationType = 'timing' as const;
+const SpringAnimationType = 'spring' as const;
+
+const DEFAULT_SPRING_PARAMS = {
+  damping: 50,
+  mass: 0.3,
+  stiffness: 121.6,
+  overshootClamping: true,
+  restSpeedThreshold: 0.3,
+  restDisplacementThreshold: 0.3,
+};
 
 const { height: windowHeight } = Dimensions.get('window');
-const DRAG_TOSS = 0.05;
 const IOS_NORMAL_DECELERATION_RATE = 0.998;
 const ANDROID_NORMAL_DECELERATION_RATE = 0.985;
 const DEFAULT_ANIMATION_DURATION = 250;
@@ -129,6 +140,7 @@ interface TimingParams {
   position: Animated.Value<number>;
   finished: Animated.Value<number>;
   frameTime: Animated.Value<number>;
+  velocity: Animated.Node<number>;
 }
 
 type CommonProps = {
@@ -160,13 +172,6 @@ type CommonProps = {
    */
   animatedPosition?: Animated.Value<number>;
   /**
-   * Configuration for the timing reanimated function
-   */
-  animationConfig?: {
-    duration?: number;
-    easing?: Animated.EasingFunction;
-  };
-  /**
    * This value is useful if you want to take into consideration safe area insets
    * when applying percentages for snapping points. We recommend using react-native-safe-area-context
    * library for that.
@@ -181,16 +186,46 @@ type CommonProps = {
    * Style to be applied to the container.
    */
   containerStyle?: Animated.AnimateStyle<ViewStyle>;
+  /*
+   * Factor of resistance when the gesture is released. A value of 0 offers maximum
+   * acceleration, whereas 1 acts as the opposite. Defaults to 0.95
+   */
+  friction: number;
+  /*
+   * Allow drawer to be dragged beyond lowest snap point
+   */
+  enableOverScroll: boolean;
+};
+
+type TimingAnimationProps = {
+  animationType: typeof TimingAnimationType;
+  /**
+   * Configuration for the timing reanimated function
+   */
+  animationConfig?: Partial<Animated.TimingConfig>;
+};
+
+type SpringAnimationProps = {
+  animationType: typeof SpringAnimationType;
+  /**
+   * Configuration for the spring reanimated function
+   */
+  animationConfig?: Partial<Animated.SpringConfig>;
 };
 
 type Props<T> = CommonProps &
-  (FlatListOption<T> | ScrollViewOption | SectionListOption<T>);
+  (FlatListOption<T> | ScrollViewOption | SectionListOption<T>) &
+  (TimingAnimationProps | SpringAnimationProps);
 
 export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   static defaultProps = {
     topInset: 0,
+    friction: 0.95,
+    animationType: 'timing',
     innerRef: React.createRef<AnimatedScrollableComponent>(),
+    enableOverScroll: false,
   };
+
   /**
    * Gesture Handler references
    */
@@ -268,9 +303,12 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
   constructor(props: Props<T>) {
     super(props);
-    const { initialSnapIndex, animationConfig } = props;
+    const { initialSnapIndex, animationType } = props;
+
+    const animationDriver = animationType === 'timing' ? 0 : 1;
     const animationDuration =
-      animationConfig?.duration || DEFAULT_ANIMATION_DURATION;
+      (props.animationType === 'timing' && props.animationConfig?.duration) ||
+      DEFAULT_ANIMATION_DURATION;
 
     const ScrollComponent = this.getScrollComponent();
     // @ts-ignore
@@ -278,7 +316,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
 
     const snapPoints = this.getNormalisedSnapPoints();
     const openPosition = snapPoints[0];
-    const closedPosition = snapPoints[snapPoints.length - 1];
+    const closedPosition = this.props.enableOverScroll
+      ? windowHeight
+      : snapPoints[snapPoints.length - 1];
     const initialSnap = snapPoints[initialSnapIndex];
     this.nextSnapIndex = new Value(initialSnapIndex);
 
@@ -333,7 +373,15 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const isAnimationInterrupted = and(
       or(
         eq(handleGestureState, GestureState.BEGAN),
-        eq(drawerGestureState, GestureState.BEGAN)
+        eq(drawerGestureState, GestureState.BEGAN),
+        and(
+          eq(this.isAndroid, 0),
+          eq(animationDriver, 1),
+          or(
+            eq(drawerGestureState, GestureState.ACTIVE),
+            eq(handleGestureState, GestureState.ACTIVE)
+          )
+        )
       ),
       clockRunning(this.animationClock)
     );
@@ -417,7 +465,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const endOffsetY = add(
       this.lastSnap,
       this.translationY,
-      multiply(DRAG_TOSS, this.velocityY)
+      multiply(1 - props.friction, this.velocityY)
     );
 
     this.calculateNextSnapPoint = (i = 0): Animated.Node<number> | number =>
@@ -436,43 +484,55 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             this.calculateNextSnapPoint(i + 1)
           );
 
-    const runTiming = ({
+    const runAnimation = ({
       clock,
       from,
       to,
       position,
       finished,
+      velocity,
       frameTime,
     }: TimingParams) => {
       const state = {
         finished,
+        velocity: new Value(0),
         position,
         time: new Value(0),
         frameTime,
       };
 
-      const animationParams = {
+      const timingConfig = {
         duration: animationDuration,
-        easing: animationConfig?.easing || DEFAULT_EASING,
+        easing:
+          (props.animationType === 'timing' && props.animationConfig?.easing) ||
+          DEFAULT_EASING,
+        toValue: new Value(0),
       };
 
-      const config = {
+      const springConfig = {
+        ...DEFAULT_SPRING_PARAMS,
+        ...((props.animationType === 'spring' && props.animationConfig) || {}),
         toValue: new Value(0),
-        ...animationParams,
       };
 
       return [
         cond(and(not(clockRunning(clock)), not(eq(finished, 1))), [
           // If the clock isn't running, we reset all the animation params and start the clock
           set(state.finished, 0),
+          set(state.velocity, velocity),
           set(state.time, 0),
           set(state.position, from),
           set(state.frameTime, 0),
-          set(config.toValue, to),
+          set(timingConfig.toValue, to),
+          set(springConfig.toValue, to),
           startClock(clock),
         ]),
         // We run the step here that is going to update position
-        timing(clock, state, config),
+        cond(
+          eq(animationDriver, 0),
+          timing(clock, state, timingConfig),
+          spring(clock, state, springConfig)
+        ),
         cond(
           state.finished,
           [
@@ -528,6 +588,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         set(handleOldGestureState, GestureState.END),
         // By forcing that frameTime exceeds duration, it has the effect of stopping the animation
         set(this.animationFrameTime, add(animationDuration, 1000)),
+        set(this.velocityY, 0),
         stopClock(this.animationClock),
         this.prevTranslateYOffset,
       ],
@@ -538,7 +599,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
           clockRunning(this.animationClock)
         ),
         [
-          runTiming({
+          runAnimation({
             clock: this.animationClock,
             from: cond(
               this.isManuallySetValue,
@@ -549,6 +610,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             position: this.animationPosition,
             finished: this.animationFinished,
             frameTime: this.animationFrameTime,
+            velocity: this.velocityY,
           }),
         ],
         [
@@ -570,7 +632,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     );
 
     this.position = interpolate(this.translateY, {
-      inputRange: [openPosition, closedPosition],
+      inputRange: [openPosition, snapPoints[snapPoints.length - 1]],
       outputRange: [1, 0],
       extrapolate: Extrapolate.CLAMP,
     });
@@ -715,15 +777,19 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                   const { method, args } = imperativeScrollOptions[
                     this.props.componentType
                   ];
+                  // @ts-ignore
+                  const node = this.props.innerRef.current?.getNode();
+
                   if (
-                    (this.props.componentType === 'FlatList' &&
+                    node &&
+                    node[method] &&
+                    ((this.props.componentType === 'FlatList' &&
                       (this.props?.data?.length || 0) > 0) ||
-                    (this.props.componentType === 'SectionList' &&
-                      this.props.sections.length > 0) ||
-                    this.props.componentType === 'ScrollView'
+                      (this.props.componentType === 'SectionList' &&
+                        this.props.sections.length > 0) ||
+                      this.props.componentType === 'ScrollView')
                   ) {
-                    // @ts-ignore
-                    this.props.innerRef.current?.getNode()[method](args);
+                    node[method](args);
                   }
                 })
               ),
