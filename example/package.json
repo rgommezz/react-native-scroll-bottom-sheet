@@ -24,7 +24,7 @@
     "react-native-reanimated": "~1.9.0",
     "react-native-safe-area-context": "~3.0.7",
     "react-native-screens": "~2.9.0",
-    "react-native-scroll-bottom-sheet": "^0.6.3",
+    "react-native-scroll-bottom-sheet": "^0.7.0",
     "react-native-web": "~0.11.7"
   },
   "devDependencies": {

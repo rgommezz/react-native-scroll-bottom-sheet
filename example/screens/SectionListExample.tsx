@@ -116,6 +116,7 @@ const SectionListExample: React.FC<Props> = () => {
         </View>
       </View>
       <ScrollBottomSheet<ListItemData>
+        enableOverScroll
         removeClippedSubviews={Platform.OS === 'android' && sections.length > 0}
         componentType="SectionList"
         topInset={statusBarHeight + navBarHeight}
