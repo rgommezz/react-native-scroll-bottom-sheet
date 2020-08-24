@@ -377,7 +377,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         and(
           eq(this.isAndroid, 0),
           eq(animationDriver, 1),
-          or(eq(drawerGestureState, GestureState.ACTIVE), eq(handleGestureState, GestureState.ACTIVE))
+          or(
+            eq(drawerGestureState, GestureState.ACTIVE),
+            eq(handleGestureState, GestureState.ACTIVE)
+          )
         )
       ),
       clockRunning(this.animationClock)
