@@ -198,7 +198,7 @@ type CommonProps = {
   /*
    * Custom inner scrolling component
    */
-  customScrollComponentType: FlatList | ScrollView | SectionList;
+  customScrollComponent: FlatList | ScrollView | SectionList;
 };
 
 type TimingAnimationProps = {
@@ -657,8 +657,8 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   };
 
   private getScrollComponent = () => {
-    if (this.props.customScrollComponentType) {
-      return this.props.customScrollComponentType;
+    if (this.props.customScrollComponent) {
+      return this.props.customScrollComponent;
     }
 
     switch (this.props.componentType) {
