@@ -195,6 +195,10 @@ type CommonProps = {
    * Allow drawer to be dragged beyond lowest snap point
    */
   enableOverScroll: boolean;
+  /*
+   * Custom inner scrolling component
+   */
+  customScrollComponent: FlatList | ScrollView | SectionList;
 };
 
 type TimingAnimationProps = {
@@ -653,6 +657,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   };
 
   private getScrollComponent = () => {
+    if (this.props.customScrollComponent) {
+      return this.props.customScrollComponent;
+    }
+
     switch (this.props.componentType) {
       case 'FlatList':
         return FlatList;
