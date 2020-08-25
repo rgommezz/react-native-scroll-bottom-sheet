@@ -195,7 +195,7 @@ type CommonProps = {
    * Allow drawer to be dragged beyond lowest snap point
    */
   enableOverScroll: boolean;
-  customScrollComponent: any;
+  customScrollComponent?: any;
 };
 
 type TimingAnimationProps = {
