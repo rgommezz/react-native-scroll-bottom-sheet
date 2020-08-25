@@ -170,7 +170,7 @@ This is the list of exclusive props that are meant to be used to customise the b
 | `containerStyle`            | no       | `StyleProp<ViewStyle>`  | Style to be applied to the container (Handle and Content) |
 | `friction`                  | no       | `number`      | Factor of resistance when the gesture is released. A value of 0 offers maximum * acceleration, whereas 1 acts as the opposite. Defaults to 0.95 |
 | `enableOverScroll`          | yes      | `boolean`     | Allow drawer to be dragged beyond lowest snap point |
-| `customScrollComponent`     | no       | `ScrollView | FlatList | SectionList` | Custom instance of inner scroll element |
+| `customScrollComponent`     | no       | `ScrollView \| FlatList \| SectionList` | Custom instance of inner scroll element |
 
 ### Inherited
 Depending on the value of `componentType` chosen, the bottom sheet component will inherit its underlying props, being one of
