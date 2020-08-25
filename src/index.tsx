@@ -839,7 +839,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         />
         <Animated.Code
           exec={onChange(this.isManuallySetValue, [
-            debug("isManuallySetValue", this.isManuallySetValue),
+            debug('isManuallySetValue', this.isManuallySetValue),
             cond(
               this.isManuallySetValue,
               [
