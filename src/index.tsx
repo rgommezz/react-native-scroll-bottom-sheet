@@ -28,6 +28,7 @@ import Animated, {
   Clock,
   clockRunning,
   cond,
+  debug,
   Easing as EasingDeprecated,
   // @ts-ignore: this property is only present in Reanimated 2
   EasingNode,
@@ -195,7 +196,10 @@ type CommonProps = {
    * Allow drawer to be dragged beyond lowest snap point
    */
   enableOverScroll: boolean;
-  customScrollComponent?: any;
+  /*
+   * Custom inner scrolling component
+   */
+  customScrollComponentType: FlatList | ScrollView | SectionList;
 };
 
 type TimingAnimationProps = {
@@ -214,28 +218,17 @@ type SpringAnimationProps = {
   animationConfig?: Partial<Animated.SpringConfig>;
 };
 
-interface State {
-  manuallySetValue: boolean;
-}
-
 type Props<T> = CommonProps &
   (FlatListOption<T> | ScrollViewOption | SectionListOption<T>) &
   (TimingAnimationProps | SpringAnimationProps);
 
-export class ScrollBottomSheet<T extends any> extends Component<
-  Props<T>,
-  State
-> {
+export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   static defaultProps = {
     topInset: 0,
     friction: 0.95,
     animationType: 'timing',
     innerRef: React.createRef<AnimatedScrollableComponent>(),
     enableOverScroll: false,
-  };
-
-  public state: State = {
-    manuallySetValue: false,
   };
 
   /**
@@ -665,8 +658,8 @@ export class ScrollBottomSheet<T extends any> extends Component<
   };
 
   private getScrollComponent = () => {
-    if (this.props.customScrollComponent) {
-      return this.props.customScrollComponent;
+    if (this.props.customScrollComponentType) {
+      return this.props.customScrollComponentType;
     }
 
     switch (this.props.componentType) {
@@ -688,7 +681,6 @@ export class ScrollBottomSheet<T extends any> extends Component<
     this.isManuallySetValue.setValue(1);
     this.manualYOffset.setValue(snapPoints[index]);
     this.nextSnapIndex.setValue(index);
-    this.setState({ manuallySetValue: true });
   };
 
   render() {
@@ -845,9 +837,10 @@ export class ScrollBottomSheet<T extends any> extends Component<
             ])
           )}
         />
-        {this.state.manuallySetValue && (
-          <Animated.Code
-            exec={cond(
+        <Animated.Code
+          exec={onChange(this.isManuallySetValue, [
+            debug("isManuallySetValue", this.isManuallySetValue),
+            cond(
               this.isManuallySetValue,
               [
                 set(this.destSnapPoint, this.manualYOffset),
@@ -859,14 +852,12 @@ export class ScrollBottomSheet<T extends any> extends Component<
                   this.masterDrawer?.current?.setNativeProps({
                     maxDeltaY: value - this.getNormalisedSnapPoints()[0],
                   });
-
-                  this.setState({ manuallySetValue: false });
                 }),
               ],
               [set(this.nextSnapIndex, 0)]
-            )}
-          />
-        )}
+            ),
+          ])}
+        />
       </Animated.View>
     );
 
