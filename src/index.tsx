@@ -28,7 +28,6 @@ import Animated, {
   Clock,
   clockRunning,
   cond,
-  debug,
   Easing as EasingDeprecated,
   // @ts-ignore: this property is only present in Reanimated 2
   EasingNode,
@@ -839,7 +838,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
         />
         <Animated.Code
           exec={onChange(this.isManuallySetValue, [
-            debug('isManuallySetValue', this.isManuallySetValue),
             cond(
               this.isManuallySetValue,
               [
