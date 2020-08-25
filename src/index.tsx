@@ -195,6 +195,7 @@ type CommonProps = {
    * Allow drawer to be dragged beyond lowest snap point
    */
   enableOverScroll: boolean;
+  customScrollComponent: any;
 };
 
 type TimingAnimationProps = {
@@ -213,17 +214,28 @@ type SpringAnimationProps = {
   animationConfig?: Partial<Animated.SpringConfig>;
 };
 
+interface State {
+  manuallySetValue: boolean;
+}
+
 type Props<T> = CommonProps &
   (FlatListOption<T> | ScrollViewOption | SectionListOption<T>) &
   (TimingAnimationProps | SpringAnimationProps);
 
-export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
+export class ScrollBottomSheet<T extends any> extends Component<
+  Props<T>,
+  State
+> {
   static defaultProps = {
     topInset: 0,
     friction: 0.95,
     animationType: 'timing',
     innerRef: React.createRef<AnimatedScrollableComponent>(),
     enableOverScroll: false,
+  };
+
+  public state: State = {
+    manuallySetValue: false,
   };
 
   /**
@@ -653,6 +665,10 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   };
 
   private getScrollComponent = () => {
+    if (this.props.customScrollComponent) {
+      return this.props.customScrollComponent;
+    }
+
     switch (this.props.componentType) {
       case 'FlatList':
         return FlatList;
@@ -672,6 +688,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     this.isManuallySetValue.setValue(1);
     this.manualYOffset.setValue(snapPoints[index]);
     this.nextSnapIndex.setValue(index);
+    this.setState({ manuallySetValue: true });
   };
 
   render() {
@@ -828,9 +845,9 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
             ])
           )}
         />
-        <Animated.Code
-          exec={onChange(this.isManuallySetValue, [
-            cond(
+        {this.state.manuallySetValue && (
+          <Animated.Code
+            exec={cond(
               this.isManuallySetValue,
               [
                 set(this.destSnapPoint, this.manualYOffset),
@@ -842,12 +859,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                   this.masterDrawer?.current?.setNativeProps({
                     maxDeltaY: value - this.getNormalisedSnapPoints()[0],
                   });
+
+                  this.setState({ manuallySetValue: false });
                 }),
               ],
               [set(this.nextSnapIndex, 0)]
-            ),
-          ])}
-        />
+            )}
+          />
+        )}
       </Animated.View>
     );
 
