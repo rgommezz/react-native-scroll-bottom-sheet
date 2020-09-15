@@ -17,7 +17,7 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 - **:electron: Virtualisation support**: `FlatList` and `SectionList` components are 1st class citizens, as well as `ScrollView`
 - **:fire: Peformant**: runs at 60 FPS even on low grade Android devices
 - **:white_check_mark: Horizontal mode**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded
-- **:gear: Minimalistic**: exposes a set of fundamental props to easily control its behaviour
+- **:gear: Minimalistic**: exposes a set of fundamental props to easily control its behaviour, supporting both Timing and Spring animations
 - **:point_down: Support for interruptions**: animations can be interrupted anytime smoothly without sudden jumps
 - **:sunglasses: Imperative snapping**: for cases where you need to close the bottom sheet by pressing an external touchable
 - **:rocket: Animate all the things**: you can animate other elements on the screen based on the bottom sheet position
@@ -41,45 +41,6 @@ yarn add react-native-scroll-bottom-sheet
 If you don't use Expo, you also need to install [react-native-gesture-handler](https://github.com/software-mansion/react-native-gesture-handler) and [react-native-reanimated](https://github.com/software-mansion/react-native-reanimated) libraries along with this one.
 
 It's recommended you install a version of gesture handler equal or higher than `1.6.0`, and for reanimated, equal or higher than `1.7.0`. Otherwise you may run into unexpected errors. This library is also compatible with reanimated 2.x, starting with `react-native-reanimated: 2.0.0-alpha.4`.
-
-## Compatibility table
-You may add some touchable components inside the bottom sheet or several `FlatList` widgets for horizontal mode. Unfortunately, not all _interactable_ React Native components are compatible with this library. This is due to some limitations on `react-native-gesture-handler`, which this library uses behind the scenes. For that, please follow this compatibility table:
-
-| Import                       | Touchable | Flatlist    |
-| -------------------------    | --------  | -------     |
-| react-native                 | iOS       |      🚫     |
-| react-native-gesture-handler | Android   | Android, iOS|
-
-### Touchables
-As you can see on the table, for any touchable component (`TouchableOpacity`, `TouchableHighlight`, ...) you need to have different imports depending on the platform. The below is a snippet you may find useful to abstract that into a component.
-
-```js
-import React from "react";
-import { Platform, TouchableOpacity } from "react-native";
-import { TouchableOpacity as RNGHTouchableOpacity } from "react-native-gesture-handler";
-
-const BottomSheetTouchable = (props) => {
-  if (Platform.OS === "android") {
-    return (
-      <RNGHTouchableOpacity {...props} />
-    );
-  }
-
-  return <TouchableOpacity {...props} />
-};
-
-export default BottomSheetTouchable;
-```
-
-### Horizontal Mode
-For this mode to work properly, **you have to import `FlatList` from react-native-gesture-handler** instead of react-native.
-
-```js
-import { FlatList } from 'react-native-gesture-handler';
-
-...
-```
-
 
 ## Usage
 
@@ -161,10 +122,10 @@ This is the list of exclusive props that are meant to be used to customise the b
 | `snapPoints`                | yes      | `Array<string \| number>`       | Array of numbers and/or percentages that indicate the different resting positions of the bottom sheet (in dp or %), **starting from the top**. If a percentage is used, that would translate to the relative amount of the total window height. If you want that percentage to be calculated based on the parent available space instead, for example to account for safe areas or navigation bars, use it in combination with `topInset` prop |
 | `initialSnapIndex`          | yes      | `number`       | Index that references the initial resting position of the drawer, **starting from the top** |
 | `renderHandle`              | yes      |  `() => React.ReactNode`      | Render prop for the handle, should return a React Element |
-| `animationConfig`           | no       | `string`        | `timing` (default)  or `spring` |
 | `onSettle`                  | no       |  `(index: number) => void`       | Callback that is executed right after the bottom sheet settles in one of the snapping points. The new index is provided on the callback |
+| `animationType`             | no       | `string`        | `timing` (default)  or `spring` |
 | `animatedPosition`          | no       |  `Animated.Value<number>`       | Animated value that tracks the position of the drawer, being: 0 => closed, 1 => fully opened |
-| `animationConfig`           | no       | `{ duration: number, easing: Animated.EasingFunction }`         | Timing configuration for the animation, by default it uses a duration of 250ms and easing fn `Easing.inOut(Easing.linear)`  |
+| `animationConfig`           | no       | `TimingConfig` or `SpringConfig`         | Timing or Spring configuration for the animation. If `animationType` is `timing`, it uses by default a timing configuration with a duration of 250ms and easing fn `Easing.inOut(Easing.linear)`. If `animationType` is `spring`, it uses [this default spring configuration](https://github.com/rgommezz/react-native-scroll-bottom-sheet/blob/master/src/index.tsx#L77). You can partially override any parameter from the animation config as per your needs   |
 | `topInset`                  | no       | `number`  | This value is useful to provide an offset (in dp) when applying percentages for snapping points |
 | `innerRef`                  | no       | `RefObject`  | Ref to the inner scrollable component (ScrollView, FlatList or SectionList), so that you can call its imperative methods. For instance, calling `scrollTo` on a ScrollView. In order to so, you have to use `getNode` as well, since it's wrapped into an _animated_ component: `ref.current.getNode().scrollTo({y: 0, animated: true})` |
 | `containerStyle`            | no       | `StyleProp<ViewStyle>`  | Style to be applied to the container (Handle and Content) |
@@ -187,6 +148,44 @@ bottomSheetRef.current.snapTo(0)
 ```
 
 `bottomSheetRef` refers to the [`ref`](https://reactjs.org/docs/react-api.html#reactcreateref) passed to the `ScrollBottomSheet` component.
+
+## Compatibility table
+You may add some touchable components inside the bottom sheet or several `FlatList` widgets for horizontal mode. Unfortunately, not all _interactable_ React Native components are compatible with this library. This is due to some limitations on `react-native-gesture-handler`, which this library uses behind the scenes. For that, please follow this compatibility table:
+
+| Import                       | Touchable | Flatlist    |
+| -------------------------    | --------  | -------     |
+| react-native                 | iOS       |      🚫     |
+| react-native-gesture-handler | Android   | Android, iOS|
+
+### Touchables
+As you can see on the table, for any touchable component (`TouchableOpacity`, `TouchableHighlight`, ...) you need to have different imports depending on the platform. The below is a snippet you may find useful to abstract that into a component.
+
+```js
+import React from "react";
+import { Platform, TouchableOpacity } from "react-native";
+import { TouchableOpacity as RNGHTouchableOpacity } from "react-native-gesture-handler";
+
+const BottomSheetTouchable = (props) => {
+  if (Platform.OS === "android") {
+    return (
+      <RNGHTouchableOpacity {...props} />
+    );
+  }
+
+  return <TouchableOpacity {...props} />
+};
+
+export default BottomSheetTouchable;
+```
+
+### Horizontal Mode
+For this mode to work properly, **you have to import `FlatList` from react-native-gesture-handler** instead of react-native.
+
+```js
+import { FlatList } from 'react-native-gesture-handler';
+
+...
+```
 
 ## Limitations
 At the moment, the component does not support updating snap points via state, something you may want to achieve when changing device orientation for instance. A temporary workaround is to leverage React keys to force a re-mount of the component. This is some illustrative code to give you an idea how you could handle an orientation change with keys:
