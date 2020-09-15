@@ -130,7 +130,7 @@ This is the list of exclusive props that are meant to be used to customise the b
 | `innerRef`                  | no       | `RefObject`  | Ref to the inner scrollable component (ScrollView, FlatList or SectionList), so that you can call its imperative methods. For instance, calling `scrollTo` on a ScrollView. In order to so, you have to use `getNode` as well, since it's wrapped into an _animated_ component: `ref.current.getNode().scrollTo({y: 0, animated: true})` |
 | `containerStyle`            | no       | `StyleProp<ViewStyle>`  | Style to be applied to the container (Handle and Content) |
 | `friction`                  | no       | `number`      | Factor of resistance when the gesture is released. A value of 0 offers maximum * acceleration, whereas 1 acts as the opposite. Defaults to 0.95 |
-| `enableOverScroll`          | yes      | `boolean`     | Allow drawer to be dragged beyond lowest snap point |
+| `enableOverScroll`          | no       | `boolean`     | Allow drawer to be dragged beyond lowest snap point |
 
 
 ### Inherited
