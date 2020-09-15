@@ -15,7 +15,7 @@ Cross platform scrollable bottom sheet with virtualisation support and fully nat
 
 ## Features
 - **:electron: Virtualisation support**: `FlatList` and `SectionList` components are 1st class citizens, as well as `ScrollView`
-- **:fire: Peformant**: runs at 60 FPS even on low grade Android devices
+- **:fire: Performant**: runs at 60 FPS even on low grade Android devices
 - **:white_check_mark: Horizontal mode**: allows for nice implementation of Google or Apple Maps bottom sheets types, where you have several horizontal lists embedded
 - **:gear: Minimalistic**: exposes a set of fundamental props to easily control its behaviour, supporting both Timing and Spring animations
 - **:point_down: Support for interruptions**: animations can be interrupted anytime smoothly without sudden jumps
