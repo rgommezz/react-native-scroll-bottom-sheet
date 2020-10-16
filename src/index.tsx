@@ -281,7 +281,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   private lastStartScrollY: Animated.Value<number> = new Value(0);
   private prevTranslateYOffset: Animated.Value<number>;
   private translationY: Animated.Value<number>;
-  private destSnapPoint = new Value(0);
+  private destSnapPoint = new Value<number>(0);
 
   private lastSnap: Animated.Value<number>;
   private dragWithHandle = new Value(0);
@@ -558,6 +558,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               set(this.dragWithHandle, 0),
             ]),
             set(this.isManuallySetValue, 0),
+            set(this.nextSnapIndex, 0),
             set(this.manualYOffset, 0),
             stopClock(clock),
             this.prevTranslateYOffset,
@@ -670,8 +671,18 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   snapTo = (index: number) => {
     const snapPoints = this.getNormalisedSnapPoints();
     this.isManuallySetValue.setValue(1);
-    this.manualYOffset.setValue(snapPoints[index]);
+    const yOffset = snapPoints[index];
+    this.manualYOffset.setValue(yOffset);
     this.nextSnapIndex.setValue(index);
+
+    this.destSnapPoint.setValue(yOffset);
+    this.animationFinished.setValue(0);
+    this.lastSnap.setValue(yOffset);
+    // This is the TapGHandler trick
+    // @ts-ignore
+    this.masterDrawer?.current?.setNativeProps({
+      maxDeltaY: yOffset - this.getNormalisedSnapPoints()[0],
+    });
   };
 
   render() {
@@ -827,26 +838,6 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
               ),
             ])
           )}
-        />
-        <Animated.Code
-          exec={onChange(this.isManuallySetValue, [
-            cond(
-              this.isManuallySetValue,
-              [
-                set(this.destSnapPoint, this.manualYOffset),
-                set(this.animationFinished, 0),
-                set(this.lastSnap, this.manualYOffset),
-                call([this.lastSnap], ([value]) => {
-                  // This is the TapGHandler trick
-                  // @ts-ignore
-                  this.masterDrawer?.current?.setNativeProps({
-                    maxDeltaY: value - this.getNormalisedSnapPoints()[0],
-                  });
-                }),
-              ],
-              [set(this.nextSnapIndex, 0)]
-            ),
-          ])}
         />
       </Animated.View>
     );
