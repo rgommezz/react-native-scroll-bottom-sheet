@@ -290,6 +290,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
   private didScrollUpAndPullDown: Animated.Node<number>;
   private setTranslationY: Animated.Node<number>;
   private extraOffset: Animated.Node<number>;
+  private currentHeight: number
   private calculateNextSnapPoint: (
     i?: number
   ) => number | Animated.Node<number>;
@@ -335,6 +336,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     const drawerOldGestureState = new Value<GestureState>(-1);
 
     const lastSnapInRange = new Value(1);
+    this.currentHeight = 0
     this.prevTranslateYOffset = new Value(initialSnap);
     this.translationY = new Value(initialSnap);
 
@@ -667,6 +669,14 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     }
   };
 
+
+  private onContentSizeChange = (_, height: number) => {
+      if (this.currentHeight > height) {
+        this.lastStartScrollY.setValue(0);
+      }
+      this.currentHeight = height;
+  };  
+
   snapTo = (index: number) => {
     const snapPoints = this.getNormalisedSnapPoints();
     this.isManuallySetValue.setValue(1);
@@ -730,6 +740,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
                 // @ts-ignore
                 decelerationRate={this.decelerationRate}
                 onScrollBeginDrag={this.onScrollBeginDrag}
+                onContentSizeChange={this.onContentSizeChange}
                 scrollEventThrottle={1}
                 contentContainerStyle={[
                   rest.contentContainerStyle,
