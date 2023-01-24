@@ -21,7 +21,7 @@
     "react-native-gesture-handler": "~1.6.0",
     "react-native-maps": "0.27.1",
     "react-native-paper": "^3.10.1",
-    "react-native-reanimated": "~1.9.0",
+    "react-native-reanimated": "~2.10.0",
     "react-native-safe-area-context": "~3.0.7",
     "react-native-screens": "~2.9.0",
     "react-native-scroll-bottom-sheet": "^0.7.0",
