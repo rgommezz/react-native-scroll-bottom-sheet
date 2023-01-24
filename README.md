@@ -236,4 +236,6 @@ The library has been written in Typescript, so you'll get type checking and auto
 
 ## License
 
-MIT
+MIT © [Raul Gomez Acuna](https://raulgomez.io/)
+
+If you found this project interesting, please consider following me on [twitter](https://twitter.com/rgommezz)
