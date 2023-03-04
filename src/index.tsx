@@ -856,7 +856,7 @@ export class ScrollBottomSheet<T extends any> extends Component<Props<T>> {
     if (Platform.OS === 'android') {
       return (
         <TapGestureHandler
-          maxDurationMs={100000}
+          maxDurationMs={10}
           ref={this.masterDrawer}
           maxDeltaY={initialSnap - this.getNormalisedSnapPoints()[0]}
           shouldCancelWhenOutside={false}
